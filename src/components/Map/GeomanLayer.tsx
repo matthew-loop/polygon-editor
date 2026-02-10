@@ -127,15 +127,27 @@ export function GeomanLayer() {
       isDrawingRef.current = false;
     };
 
+    const onRemove = (e: { layer: L.Layer }) => {
+      const layer = e.layer as ExtendedPolygon;
+      if (layer.featureId) {
+        // Remove from layerMapRef BEFORE the store update triggers the sync
+        // effect, so sync won't try to call pm.disable() on the detached layer
+        layerMapRef.current.delete(layer.featureId);
+        usePolygonStore.getState().deleteFeature(layer.featureId);
+      }
+    };
+
     map.on('pm:drawstart', onDrawStart);
     map.on('pm:drawend', onDrawEnd);
     map.on('pm:create', onCreate as L.LeafletEventHandlerFn);
+    map.on('pm:remove', onRemove as L.LeafletEventHandlerFn);
 
     return () => {
       map.pm.removeControls();
       map.off('pm:drawstart', onDrawStart);
       map.off('pm:drawend', onDrawEnd);
       map.off('pm:create', onCreate as L.LeafletEventHandlerFn);
+      map.off('pm:remove', onRemove as L.LeafletEventHandlerFn);
       isDrawingRef.current = false;
     };
   }, [map]);

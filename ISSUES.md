@@ -1,6 +1,6 @@
 # Polygon Editor — Open Issues
 
-12 open issues: 1 GeomanLayer bug, 7 UX, 2 store design, 1 data model, 1 dependency.
+10 open issues, 2 fixed: 1 GeomanLayer bug, 5 UX, 2 store design, 1 data model, 1 dependency.
 
 ---
 
@@ -16,9 +16,9 @@
 3. Store update triggers the sync effect
 4. Sync tries `layer.pm.disable()` on the already-removed layer
 
-Calling `pm.disable()` on a layer that's no longer on the map may throw or silently fail.
+Calling `pm.disable()` on a layer that's no longer on the map may throw or silently fail. Currently no `pm:remove` handler is registered at all, so Geoman removal mode is not connected to the store.
 
-**Fix:** Remove the layer from `layerMapRef` immediately in the `pm:remove` handler, before the store update triggers the sync.
+**Fix:** Add a `pm:remove` handler that removes the layer from `layerMapRef` immediately, before calling `deleteFeature()` on the store.
 
 ---
 
@@ -34,13 +34,9 @@ Calling `pm.disable()` on a layer that's no longer on the map may throw or silen
 
 ---
 
-### 3. Native `confirm()` and `alert()` Dialogs
+### ~~3. Native `confirm()` and `alert()` Dialogs~~ FIXED
 
-**Files:** `src/components/Sidebar/PolygonListItem.tsx`, `src/App.tsx`, `src/components/ExportPanel.tsx`
-
-**Problem:** The app uses native `window.confirm()` for delete/clear-all confirmation, and `window.alert()` for the empty-export message. These are blocking, look out of place, and can't be styled.
-
-**Fix:** Replace with a custom confirmation dialog component.
+Replaced with custom `ConfirmModal` component (`src/components/ConfirmModal.tsx`). Used in `PolygonListItem.tsx` for delete confirmation and `Sidebar.tsx` for clear-all confirmation.
 
 ---
 
@@ -64,13 +60,9 @@ Calling `pm.disable()` on a layer that's no longer on the map may throw or silen
 
 ---
 
-### 6. No Zoom-to-Polygon on Sidebar Selection
+### ~~6. No Zoom-to-Polygon on Sidebar Selection~~ FIXED
 
-**Files:** `src/components/Sidebar/Sidebar.tsx`, `src/components/Map/GeomanLayer.tsx`
-
-**Problem:** Clicking a polygon in the sidebar selects it, but the map doesn't pan/zoom to show it. If the polygon is offscreen, the user must manually find it.
-
-**Fix:** When `selectedFeatureId` changes, compute bounds and call `map.fitBounds()` or `map.flyToBounds()`.
+`MapBoundsHandler.tsx` now has a `useEffect` that calls `map.flyToBounds()` with padding when `selectedFeatureId` changes.
 
 ---
 
@@ -78,7 +70,7 @@ Calling `pm.disable()` on a layer that's no longer on the map may throw or silen
 
 **File:** `src/components/Map/MapBoundsHandler.tsx`
 
-**Problem:** Bounds are only fit when going from zero to some features. Subsequent imports won't adjust the view.
+**Problem:** Bounds are only fit when going from zero to some features. Subsequent imports won't adjust the view. The handler tracks `prevFeaturesLength` (a count) rather than the set of feature IDs.
 
 **Fix:** Track feature IDs rather than count. Re-fit bounds when the *set* of features changes, not just on initial load.
 
@@ -132,7 +124,7 @@ Calling `pm.disable()` on a layer that's no longer on the map may throw or silen
 
 ### 12. Bundle Size Exceeds 500KB Warning
 
-**Problem:** The single JS chunk (~643KB, 188KB gzipped) includes Leaflet, Geoman, and all application code.
+**Problem:** The single JS chunk (~714KB) includes Leaflet, Geoman, and all application code.
 
 **Fix:** Use `manualChunks` to split Leaflet + Geoman into a vendor chunk. Low priority — gzipped size is reasonable for a map app.
 
@@ -141,16 +133,14 @@ Calling `pm.disable()` on a layer that's no longer on the map may throw or silen
 ## Implementation Priority
 
 ### Medium Effort
-- **#1** Fix pm:remove race condition with layerMapRef
+- **#1** Fix pm:remove race condition / add handler
 - **#9** Deduplicate name field on PolygonFeature
 - **#8** Fix shallow merge in updateFeature
 - **#10** Fix KML export to include style data
 - **#2** Add append/merge option for file uploads
-- **#6** Add zoom-to-polygon on sidebar selection
 - **#7** Improve MapBoundsHandler to handle new features
 
 ### Larger Effort
 - **#4 + #5** Add simplify preview and undo support
-- **#3** Replace native confirm/alert with custom dialogs
 - **#11** Replace or rewrite tokml
 - **#12** Code-split the bundle
