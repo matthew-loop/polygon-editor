@@ -32,6 +32,7 @@ export function PolygonListItem({
   const [isRenamingName, setIsRenamingName] = useState(false);
   const [editedName, setEditedName] = useState(feature.name);
   const [showMenu, setShowMenu] = useState(false);
+  const itemRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +42,13 @@ export function PolygonListItem({
       inputRef.current.select();
     }
   }, [isRenamingName]);
+
+  // Scroll into view when selected (e.g. from map click)
+  useEffect(() => {
+    if (isSelected && itemRef.current) {
+      itemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [isSelected]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -100,6 +108,7 @@ export function PolygonListItem({
 
   return (
     <div
+      ref={itemRef}
       className={`group flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-xl cursor-pointer transition-all duration-200 border-[1.5px] border-transparent animate-item-fade-in ${
         showMenu ? 'relative z-[60]' : ''
       } ${

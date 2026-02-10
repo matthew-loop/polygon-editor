@@ -47,6 +47,8 @@ export function GeomanLayer() {
 
   // Track whether Geoman is actively drawing
   const isDrawingRef = useRef(false);
+  // Flag to skip the map click handler when a polygon was just clicked
+  const layerClickedRef = useRef(false);
   const prevShowLabelsRef = useRef(false);
 
   const features = usePolygonStore((s) => s.features);
@@ -68,6 +70,11 @@ export function GeomanLayer() {
   // Click empty map space to deselect (only when not editing or drawing)
   useEffect(() => {
     const handleMapClick = () => {
+      // Skip if a polygon layer was just clicked (Leaflet fires both layer + map click)
+      if (layerClickedRef.current) {
+        layerClickedRef.current = false;
+        return;
+      }
       const { editingFeatureId, selectedFeatureId, isDrawing } = usePolygonStore.getState();
       if (!editingFeatureId && selectedFeatureId && !isDrawing && !isDrawingRef.current) {
         selectFeature(null);
@@ -249,8 +256,11 @@ export function GeomanLayer() {
             : { sticky: true }
         );
 
-        // Click to select
-        polygon.on('click', () => handleLayerClick(feature.id));
+        // Click to select (set flag so the map click handler doesn't deselect)
+        polygon.on('click', () => {
+          layerClickedRef.current = true;
+          handleLayerClick(feature.id);
+        });
 
         // Edit event — sync geometry back to store
         polygon.on('pm:edit', () => {

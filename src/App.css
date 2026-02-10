@@ -132,6 +132,12 @@ input[type='range'].simplify-slider::-moz-range-thumb {
   border-right-color: var(--color-panel-bg) !important;
 }
 
+/* ── Remove browser focus outline on map polygons ── */
+
+.leaflet-interactive:focus {
+  outline: none;
+}
+
 /* ── Permanent Polygon Labels ── */
 
 .polygon-label {
