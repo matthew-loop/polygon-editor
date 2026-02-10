@@ -1,4 +1,4 @@
-import type { Polygon, MultiPolygon, Position } from 'geojson';
+import type { Polygon, Position } from 'geojson';
 
 function perpendicularDistance(
   point: Position,
@@ -58,32 +58,15 @@ function simplifyRing(ring: Position[], epsilon: number): Position[] {
 }
 
 export function simplifyPolygonGeometry(
-  geometry: Polygon | MultiPolygon,
+  geometry: Polygon,
   epsilon: number
-): Polygon | MultiPolygon {
-  if (geometry.type === 'Polygon') {
-    return {
-      type: 'Polygon',
-      coordinates: geometry.coordinates.map((ring) => simplifyRing(ring, epsilon)),
-    };
-  }
-
+): Polygon {
   return {
-    type: 'MultiPolygon',
-    coordinates: geometry.coordinates.map((polygon) =>
-      polygon.map((ring) => simplifyRing(ring, epsilon))
-    ),
+    type: 'Polygon',
+    coordinates: geometry.coordinates.map((ring) => simplifyRing(ring, epsilon)),
   };
 }
 
-export function countPoints(geometry: Polygon | MultiPolygon): number {
-  if (geometry.type === 'Polygon') {
-    return geometry.coordinates.reduce((sum, ring) => sum + ring.length, 0);
-  }
-
-  return geometry.coordinates.reduce(
-    (sum, polygon) =>
-      sum + polygon.reduce((pSum, ring) => pSum + ring.length, 0),
-    0
-  );
+export function countPoints(geometry: Polygon): number {
+  return geometry.coordinates.reduce((sum, ring) => sum + ring.length, 0);
 }

@@ -1,4 +1,4 @@
-import type { Polygon, MultiPolygon } from 'geojson';
+import type { Polygon } from 'geojson';
 
 export interface PolygonStyle {
   fillColor: string;
@@ -10,7 +10,7 @@ export interface PolygonStyle {
 export interface PolygonFeature {
   id: string;
   name: string;
-  geometry: Polygon | MultiPolygon;
+  geometry: Polygon;
   properties: {
     name: string;
     description?: string;

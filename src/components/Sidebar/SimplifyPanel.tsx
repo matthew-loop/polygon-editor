@@ -43,30 +43,38 @@ export function SimplifyPanel() {
   const canApply = simplifiedCount < originalCount;
 
   return (
-    <div className="simplify-panel">
-      <div className="simplify-header">Simplify</div>
-      <div className="simplify-stats">
-        <span>{originalCount} pts</span>
-        <span className="simplify-arrow">&rarr;</span>
-        <span className={canApply ? 'simplify-reduced' : ''}>{simplifiedCount} pts</span>
+    <>
+      <div className="h-px bg-divider mx-5 my-1 shrink-0" />
+      <div className="px-5 pt-3 pb-4 flex flex-col gap-2.5 shrink-0">
+        <div className="flex items-center justify-between">
+          <span className="text-[0.6875rem] font-semibold tracking-widest uppercase text-text-secondary">Simplify</span>
+        </div>
+        <div className="flex items-center gap-2 text-[0.8125rem] text-text-secondary tabular-nums">
+          <span>{originalCount} pts</span>
+          <span className="text-text-tertiary text-xs">&rarr;</span>
+          <span className={canApply ? 'text-accent font-semibold' : ''}>
+            {simplifiedCount} pts
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <label className="text-[0.6875rem] font-medium text-text-tertiary shrink-0 uppercase tracking-wide">Tolerance</label>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={sliderValue}
+            onChange={(e) => setSliderValue(Number(e.target.value))}
+            className="simplify-slider flex-1"
+          />
+        </div>
+        <button
+          className="px-4 py-[7px] bg-accent-dim text-accent border border-[rgba(8,145,178,0.2)] rounded-sm cursor-pointer text-[0.8125rem] font-medium font-body transition-all duration-200 hover:not-disabled:bg-[rgba(8,145,178,0.18)] hover:not-disabled:border-[rgba(8,145,178,0.35)] active:not-disabled:scale-[0.97] disabled:opacity-35 disabled:cursor-not-allowed"
+          onClick={handleApply}
+          disabled={!canApply}
+        >
+          Apply
+        </button>
       </div>
-      <div className="simplify-slider-row">
-        <label>Tolerance</label>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={sliderValue}
-          onChange={(e) => setSliderValue(Number(e.target.value))}
-        />
-      </div>
-      <button
-        className="simplify-apply-btn"
-        onClick={handleApply}
-        disabled={!canApply}
-      >
-        Apply
-      </button>
-    </div>
+    </>
   );
 }

@@ -6,30 +6,40 @@ import { usePolygonStore } from '../../store/polygonStore';
 export function MapBoundsHandler() {
   const map = useMap();
   const features = usePolygonStore((state) => state.features);
+  const selectedFeatureId = usePolygonStore((state) => state.selectedFeatureId);
   const prevFeaturesLength = useRef(0);
 
+  // Fit bounds when features are first loaded
   useEffect(() => {
-    // Only fit bounds when features are first loaded (not on every change)
     if (features.length > 0 && prevFeaturesLength.current === 0) {
-      const bounds = L.latLngBounds([]);
+      const geoJsonLayer = L.geoJSON(
+        features.map((f) => ({
+          type: 'Feature' as const,
+          geometry: f.geometry,
+          properties: {},
+        }))
+      );
 
-      features.forEach((feature) => {
-        const coords = feature.geometry.type === 'Polygon'
-          ? feature.geometry.coordinates[0]
-          : feature.geometry.coordinates.flat(1);
-
-        coords.forEach((coord) => {
-          // GeoJSON is [lng, lat], Leaflet wants [lat, lng]
-          bounds.extend([coord[1] as number, coord[0] as number]);
-        });
-      });
-
+      const bounds = geoJsonLayer.getBounds();
       if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [50, 50] });
       }
     }
     prevFeaturesLength.current = features.length;
   }, [features, map]);
+
+  // Fly to selected polygon
+  useEffect(() => {
+    if (!selectedFeatureId) return;
+    const feature = features.find((f) => f.id === selectedFeatureId);
+    if (!feature) return;
+
+    const geoJsonLayer = L.geoJSON(feature.geometry as unknown as GeoJSON.GeoJsonObject);
+    const bounds = geoJsonLayer.getBounds();
+    if (bounds.isValid()) {
+      map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+  }, [selectedFeatureId, features, map]);
 
   return null;
 }

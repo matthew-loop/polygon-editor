@@ -1,5 +1,4 @@
 import { kml } from '@tmcw/togeojson';
-import { v4 as uuidv4 } from 'uuid';
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from 'geojson';
 import type { PolygonFeature, PolygonStyle } from '../types/polygon';
 import { DEFAULT_STYLE } from '../types/polygon';
@@ -56,7 +55,7 @@ export async function parseKmlFile(file: File): Promise<PolygonFeature[]> {
       const style = extractStyle(f.properties);
 
       polygonFeatures.push({
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         name,
         geometry: f.geometry,
         properties: {
