@@ -36,7 +36,7 @@ L.drawLocal.edit.toolbar.actions.cancel.title = 'Cancel editing, discard all cha
 L.drawLocal.edit.toolbar.actions.cancel.text = 'Cancel';
 L.drawLocal.edit.handlers.edit.tooltip.text = 'Drag handles to edit polygon vertices';
 L.drawLocal.edit.handlers.edit.tooltip.subtext = 'Click cancel to undo changes';
-L.drawLocal.edit.handlers.remove.tooltip = 'Click on a polygon to remove it';
+L.drawLocal.edit.handlers.remove.tooltip.text = 'Click on a polygon to remove it';
 
 export function EditableLayer() {
   const map = useMap();
