@@ -1,32 +1,12 @@
-/* ═══════════════════════════════════════════
-   PANEL PSEUDO-ELEMENT (texture overlay)
-   ═══════════════════════════════════════════ */
-
-.panel-texture::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 39px,
-    rgba(148, 163, 184, 0.06) 39px,
-    rgba(148, 163, 184, 0.06) 40px
-  );
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 0;
-}
-
-/* ═══════════════════════════════════════════
-   CUSTOM RANGE SLIDER
-   ═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   Custom Range Slider — Glossy
+   ══════════════════════════════════════ */
 
 input[type='range'].simplify-slider {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-surface);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -34,33 +14,41 @@ input[type='range'].simplify-slider {
 
 input[type='range'].simplify-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  background: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.3) 0%, var(--color-accent) 50%);
   border-radius: 50%;
-  border: none;
-  box-shadow: 0 0 8px rgba(8, 145, 178, 0.3);
+  border: 2px solid var(--color-bg-elevated);
+  box-shadow:
+    0 0 0 1px var(--color-accent),
+    0 2px 6px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.25s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
 input[type='range'].simplify-slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 12px rgba(8, 145, 178, 0.5);
+  box-shadow:
+    0 0 0 1px var(--color-accent),
+    0 0 12px var(--color-accent-glow),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: scale(1.1);
 }
 
 input[type='range'].simplify-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.3) 0%, var(--color-accent) 50%);
   border-radius: 50%;
-  border: none;
-  box-shadow: 0 0 8px rgba(8, 145, 178, 0.3);
+  border: 2px solid var(--color-bg-elevated);
+  box-shadow:
+    0 0 0 1px var(--color-accent),
+    0 2px 6px rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
 
-/* ═══════════════════════════════════════════
-   LEAFLET OVERRIDES
-   ═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   Leaflet Container
+   ══════════════════════════════════════ */
 
 .leaflet-container {
   height: 100%;
@@ -69,87 +57,99 @@ input[type='range'].simplify-slider::-moz-range-thumb {
   background: var(--color-bg-deep);
 }
 
-/* Zoom controls */
+/* ── Zoom Controls — Glossy ── */
+
 .leaflet-control-zoom {
   border: 1px solid var(--color-panel-border) !important;
   border-radius: var(--radius-md) !important;
   overflow: hidden;
   box-shadow: var(--shadow-panel) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
 }
 
 .leaflet-control-zoom a {
-  background: var(--color-bg-elevated) !important;
+  background: var(--color-panel-bg) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-panel-border) !important;
-  width: 34px !important;
-  height: 34px !important;
-  line-height: 34px !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
   font-size: 16px !important;
-  transition: background 0.15s !important;
+  font-weight: 500 !important;
+  transition: all 0.2s var(--ease-out) !important;
 }
 
 .leaflet-control-zoom a:hover {
   background: var(--color-bg-hover) !important;
 }
 
-/* Attribution */
+/* ── Attribution ── */
+
 .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: var(--color-panel-bg) !important;
   color: var(--color-text-tertiary) !important;
   font-size: 10px !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 4px 0 0 0 !important;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border-radius: 6px 0 0 0 !important;
 }
 
 .leaflet-control-attribution a {
   color: var(--color-text-secondary) !important;
 }
 
-/* Tooltips */
+/* ── Tooltips — Glossy ── */
+
 .leaflet-tooltip {
-  background: var(--color-bg-elevated) !important;
+  background: var(--color-panel-bg) !important;
   color: var(--color-text-primary) !important;
   border: 1px solid var(--color-panel-border) !important;
   border-radius: var(--radius-sm) !important;
   font-family: var(--font-body) !important;
   font-size: 12px !important;
   padding: 4px 10px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 .leaflet-tooltip-top::before {
-  border-top-color: var(--color-bg-elevated) !important;
+  border-top-color: var(--color-panel-bg) !important;
 }
 
 .leaflet-tooltip-bottom::before {
-  border-bottom-color: var(--color-bg-elevated) !important;
+  border-bottom-color: var(--color-panel-bg) !important;
 }
 
 .leaflet-tooltip-left::before {
-  border-left-color: var(--color-bg-elevated) !important;
+  border-left-color: var(--color-panel-bg) !important;
 }
 
 .leaflet-tooltip-right::before {
-  border-right-color: var(--color-bg-elevated) !important;
+  border-right-color: var(--color-panel-bg) !important;
 }
 
-/* ── Geoman Toolbar ── */
+/* ── Geoman Toolbar — Glossy ── */
 
 .leaflet-pm-toolbar {
   border: 1px solid var(--color-panel-border) !important;
   border-radius: var(--radius-md) !important;
   overflow: hidden;
   box-shadow: var(--shadow-panel) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
 }
 
 .leaflet-pm-toolbar .button-container {
-  background: var(--color-bg-elevated) !important;
+  background: var(--color-panel-bg) !important;
   border-color: var(--color-panel-border) !important;
 }
 
 .leaflet-pm-toolbar .button-container .leaflet-buttons-control-button {
-  background: var(--color-bg-elevated) !important;
+  background: var(--color-panel-bg) !important;
   border-color: var(--color-panel-border) !important;
 }
 
@@ -165,17 +165,20 @@ input[type='range'].simplify-slider::-moz-range-thumb {
   background: var(--color-accent-dim) !important;
 }
 
-/* Geoman action buttons */
+/* ── Geoman Actions ── */
+
 .leaflet-pm-actions-container {
-  background: var(--color-bg-elevated) !important;
+  background: var(--color-panel-bg) !important;
   border: 1px solid var(--color-panel-border) !important;
   border-radius: var(--radius-sm) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
   overflow: hidden;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 .leaflet-pm-actions-container a {
-  background: var(--color-bg-elevated) !important;
+  background: var(--color-panel-bg) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-panel-border) !important;
   font-family: var(--font-body) !important;
@@ -186,7 +189,12 @@ input[type='range'].simplify-slider::-moz-range-thumb {
   background: var(--color-bg-hover) !important;
 }
 
-/* Geoman icons */
+/* ── Geoman Icons (invert for dark theme) ── */
+
 .leaflet-pm-toolbar .control-icon {
   filter: none;
+}
+
+:root[data-theme="dark"] .leaflet-pm-toolbar .control-icon {
+  filter: invert(0.85);
 }

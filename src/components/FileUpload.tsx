@@ -68,10 +68,10 @@ export function FileUpload() {
 
   return (
     <div
-      className={`group mx-4 mb-1 px-3.5 py-3 border-[1.5px] border-dashed rounded-[10px] cursor-pointer transition-all duration-250 ease-in-out flex items-center gap-2.5 bg-transparent shrink-0 ${
+      className={`group px-3.5 py-3 border-[1.5px] border-dashed rounded-2xl cursor-pointer transition-all duration-250 flex items-center gap-3 bg-transparent shrink-0 ${
         isDragging
-          ? 'border-accent bg-accent-dim !border-solid'
-          : 'border-[rgba(148,163,184,0.35)] hover:border-[rgba(8,145,178,0.4)] hover:bg-[rgba(8,145,178,0.04)]'
+          ? 'border-accent bg-accent-dim !border-solid shadow-accent-glow'
+          : 'border-text-tertiary/25 hover:border-accent/40 hover:bg-accent-dim'
       } ${isLoading ? 'opacity-60 cursor-wait' : ''}`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
@@ -85,35 +85,45 @@ export function FileUpload() {
         onChange={handleInputChange}
         style={{ display: 'none' }}
       />
-      <svg
-        className={`w-5 h-5 shrink-0 transition-colors duration-250 ${
-          isDragging ? 'text-accent' : 'text-text-secondary group-hover:text-accent'
+      <div
+        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+          isDragging
+            ? 'bg-accent/15 text-accent shadow-[0_0_12px_var(--color-accent-glow)]'
+            : 'bg-bg-surface text-text-secondary group-hover:bg-accent/10 group-hover:text-accent'
         }`}
-        viewBox="0 0 20 20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
       >
-        <path
-          d="M10 14V3M10 3L6 7M10 3L14 7"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M3 13V15C3 16.1 3.9 17 5 17H15C16.1 17 17 16.1 17 15V13"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div>
+        <svg
+          className="w-[18px] h-[18px]"
+          viewBox="0 0 18 18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path
+            d="M9 12V3M9 3L5.5 6.5M9 3L12.5 6.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M2.5 12V14C2.5 14.83 3.17 15.5 4 15.5H14C14.83 15.5 15.5 14.83 15.5 14V12"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0">
         {isLoading ? (
           <span className="text-[0.8125rem] text-text-secondary">Processing...</span>
         ) : (
           <>
-            <span className="text-[0.8125rem] text-text-secondary transition-colors duration-250 group-hover:text-text-primary">Upload KML</span>
-            <span className="text-xs text-text-tertiary"> — drop or click</span>
+            <div className="text-[0.8125rem] font-medium text-text-primary transition-colors duration-200">
+              Upload KML
+            </div>
+            <div className="text-[0.6875rem] text-text-tertiary">
+              Drop file or click to browse
+            </div>
           </>
         )}
-        {error && <div className="text-xs text-danger mt-1">{error}</div>}
+        {error && <div className="text-[0.6875rem] text-danger mt-0.5">{error}</div>}
       </div>
     </div>
   );

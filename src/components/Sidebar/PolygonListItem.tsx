@@ -70,21 +70,19 @@ export function PolygonListItem({
 
   return (
     <div
-      className={`group flex items-center gap-2.5 px-3 py-2.5 mb-1 bg-black/[0.02] rounded-sm cursor-pointer transition-all duration-200 ease-in-out border-[1.5px] border-transparent animate-item-fade-in hover:bg-black/[0.04] ${
+      className={`group flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-xl cursor-pointer transition-all duration-200 border-[1.5px] border-transparent animate-item-fade-in ${
         isEditing
-          ? 'border-editing bg-editing-dim'
+          ? 'border-editing/40 bg-editing-dim'
           : isSelected
-            ? 'border-accent-muted bg-accent-dim shadow-accent-glow'
-            : ''
+            ? 'border-accent/20 bg-accent-dim shadow-accent-glow'
+            : 'hover:bg-bg-hover'
       }`}
       onClick={onSelect}
       onDoubleClick={handleDoubleClick}
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <div
-        className={`w-[3px] h-7 rounded-[2px] shrink-0 transition-opacity duration-200 ${
-          isSelected || isEditing ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
-        }`}
+        className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-bg-elevated shadow-[0_0_4px_rgba(0,0,0,0.1)]"
         style={{ backgroundColor: feature.properties.style.fillColor }}
       />
       {isRenamingName ? (
@@ -95,7 +93,7 @@ export function PolygonListItem({
           onChange={(e) => setEditedName(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="flex-1 px-2 py-[3px] bg-bg-surface border border-accent-muted rounded text-text-primary text-[0.8125rem] font-body outline-none focus:border-accent focus:shadow-[0_0_0_2px_var(--color-accent-dim)]"
+          className="flex-1 px-2 py-[3px] bg-bg-surface border border-accent/40 rounded-lg text-text-primary text-[0.8125rem] font-body outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--color-accent-dim)]"
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
@@ -109,7 +107,7 @@ export function PolygonListItem({
         }`}
       >
         <button
-          className={`w-[26px] h-[26px] flex items-center justify-center bg-transparent border-none cursor-pointer rounded transition-all duration-150 text-[0.8125rem] ${
+          className={`w-[26px] h-[26px] flex items-center justify-center bg-transparent border-none cursor-pointer rounded-lg transition-all duration-150 text-[0.75rem] ${
             isEditing
               ? 'bg-editing-dim text-editing'
               : 'text-text-tertiary hover:bg-editing-dim hover:text-editing'
@@ -121,7 +119,7 @@ export function PolygonListItem({
         </button>
         {!isEditing && (
           <button
-            className="w-[26px] h-[26px] flex items-center justify-center bg-transparent border-none text-text-tertiary cursor-pointer rounded transition-all duration-150 text-[0.8125rem] hover:bg-danger-dim hover:text-danger"
+            className="w-[26px] h-[26px] flex items-center justify-center bg-transparent border-none text-text-tertiary cursor-pointer rounded-lg transition-all duration-150 text-[0.75rem] hover:bg-danger-dim hover:text-danger"
             onClick={handleDeleteClick}
             title="Delete polygon"
           >

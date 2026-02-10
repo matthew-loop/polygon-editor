@@ -1,4 +1,5 @@
 import { usePolygonStore } from '../../store/polygonStore';
+import { useThemeStore } from '../../store/themeStore';
 import { PolygonListItem } from './PolygonListItem';
 import { SimplifyPanel } from './SimplifyPanel';
 import { FileUpload } from '../FileUpload';
@@ -14,6 +15,9 @@ export function Sidebar() {
   const deleteFeature = usePolygonStore((state) => state.deleteFeature);
   const updateFeature = usePolygonStore((state) => state.updateFeature);
   const clearAll = usePolygonStore((state) => state.clearAll);
+
+  const theme = useThemeStore((state) => state.theme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
   const handleNameChange = (id: string, newName: string) => {
     updateFeature(id, {
@@ -39,63 +43,91 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="panel-texture absolute top-4 left-4 bottom-4 w-[340px] z-[1000] flex flex-col bg-panel-bg backdrop-blur-[24px] border border-panel-border rounded-2xl shadow-panel overflow-hidden animate-panel-slide-in">
-      <div className="relative z-1 flex items-center gap-3 px-5 pt-5 pb-4 shrink-0">
-        <svg className="w-7 h-7 shrink-0 text-accent" viewBox="0 0 28 28" fill="none">
-          <path
-            d="M14 2L26 8V20L14 26L2 20V8L14 2Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            fill="rgba(34, 211, 238, 0.08)"
-          />
-          <path
-            d="M14 2L26 8L14 14L2 8L14 2Z"
-            fill="rgba(34, 211, 238, 0.12)"
-            stroke="currentColor"
-            strokeWidth="1"
-          />
-          <circle cx="14" cy="14" r="2.5" fill="currentColor" opacity="0.8" />
-        </svg>
-        <h1 className="font-display text-xl font-bold tracking-tight text-text-primary leading-tight">Polygon Editor</h1>
+    <aside className="absolute top-4 left-4 bottom-4 w-[340px] z-[1000] flex flex-col glass-panel rounded-[18px] overflow-hidden animate-panel-slide-in">
+      {/* ── Header ── */}
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4 shrink-0">
+        <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+          <svg className="w-[18px] h-[18px] shrink-0 text-accent" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 3L21 7.5V16.5L12 21L3 16.5V7.5L12 3Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              fill="currentColor"
+              fillOpacity="0.15"
+            />
+            <circle cx="12" cy="3" r="1.5" fill="currentColor" />
+            <circle cx="21" cy="7.5" r="1.5" fill="currentColor" />
+            <circle cx="21" cy="16.5" r="1.5" fill="currentColor" />
+            <circle cx="12" cy="21" r="1.5" fill="currentColor" />
+            <circle cx="3" cy="16.5" r="1.5" fill="currentColor" />
+            <circle cx="3" cy="7.5" r="1.5" fill="currentColor" />
+          </svg>
+        </div>
+        <h1 className="flex-1 min-w-0 font-display text-[1.125rem] font-[700] tracking-tight text-text-primary leading-tight">
+          Polygon Editor
+        </h1>
         {hasUnsavedChanges && (
           <div
-            className="w-2 h-2 rounded-full bg-accent shrink-0 ml-auto animate-pulse-dot"
+            className="w-2 h-2 rounded-full bg-accent shrink-0 animate-pulse-dot"
             title="Unsaved changes"
           />
         )}
+        <button
+          onClick={toggleTheme}
+          className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent border border-transparent text-text-secondary cursor-pointer transition-all duration-200 hover:bg-bg-hover hover:text-text-primary hover:border-panel-border"
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? (
+            <svg className="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="8" cy="8" r="3" />
+              <path d="M8 1.5V3M8 13V14.5M1.5 8H3M13 8H14.5M3.4 3.4L4.5 4.5M11.5 11.5L12.6 12.6M3.4 12.6L4.5 11.5M11.5 4.5L12.6 3.4" />
+            </svg>
+          ) : (
+            <svg className="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M13.5 10.07A6 6 0 015.93 2.5 6 6 0 1013.5 10.07z" />
+            </svg>
+          )}
+        </button>
       </div>
 
-      <div className="relative z-1">
+      {/* ── Upload ── */}
+      <div className="px-4 pb-3 shrink-0">
         <FileUpload />
       </div>
 
-      <div className="relative z-1 h-px bg-divider mx-5 my-1 shrink-0" />
+      <div className="h-px bg-divider mx-5 shrink-0" />
 
-      <div className="relative z-1 flex items-center justify-between px-5 pt-3.5 pb-2 shrink-0">
-        <span className="text-[0.6875rem] font-semibold tracking-widest uppercase text-text-secondary">Layers</span>
+      {/* ── Layers Header ── */}
+      <div className="flex items-center justify-between px-5 pt-3.5 pb-2 shrink-0">
+        <span className="text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-text-tertiary font-display">
+          Layers
+        </span>
         {features.length > 0 && (
-          <span className="text-[0.625rem] font-semibold text-accent bg-accent-dim px-2 py-0.5 rounded-[10px]">
+          <span className="text-[0.625rem] font-bold text-accent bg-accent-dim px-2.5 py-0.5 rounded-full tabular-nums tracking-wide">
             {features.length}
           </span>
         )}
       </div>
 
-      <div className="relative z-1 flex-1 overflow-y-auto px-3 py-1 min-h-[80px]">
+      {/* ── Polygon List ── */}
+      <div className="flex-1 overflow-y-auto px-3 py-1 min-h-[80px]">
         {features.length === 0 ? (
-          <div className="flex flex-col items-center justify-center px-4 py-8 text-center gap-3">
-            <svg className="w-10 h-10 text-text-tertiary opacity-50" viewBox="0 0 40 40" fill="none">
+          <div className="flex flex-col items-center justify-center px-4 py-10 text-center gap-3">
+            <svg className="w-12 h-12 text-text-tertiary opacity-20" viewBox="0 0 48 48" fill="none">
               <path
-                d="M20 4L36 12V28L20 36L4 28V12L20 4Z"
+                d="M24 6L42 15V33L24 42L6 33V15L24 6Z"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                strokeDasharray="3 3"
+                strokeDasharray="4 4"
+                strokeLinejoin="round"
               />
-              <path
-                d="M20 4L36 12M20 4L4 12M20 4V20M36 12V28L20 36M36 12L20 20M4 12V28L20 36M4 12L20 20M20 36V20"
-                stroke="currentColor"
-                strokeWidth="0.75"
-                opacity="0.3"
-              />
+              <circle cx="24" cy="6" r="2" fill="currentColor" opacity="0.4" />
+              <circle cx="42" cy="15" r="2" fill="currentColor" opacity="0.4" />
+              <circle cx="42" cy="33" r="2" fill="currentColor" opacity="0.4" />
+              <circle cx="24" cy="42" r="2" fill="currentColor" opacity="0.4" />
+              <circle cx="6" cy="33" r="2" fill="currentColor" opacity="0.4" />
+              <circle cx="6" cy="15" r="2" fill="currentColor" opacity="0.4" />
             </svg>
             <p className="text-[0.8125rem] text-text-tertiary leading-relaxed">
               Upload a KML file or draw
@@ -122,19 +154,18 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="relative z-1">
-        <SimplifyPanel />
-      </div>
+      {/* ── Simplify ── */}
+      <SimplifyPanel />
 
-      <div className="relative z-1 h-px bg-divider mx-5 my-1 shrink-0" />
+      <div className="h-px bg-divider mx-5 shrink-0" />
 
-      <div className="relative z-1">
-        <ExportPanel />
-      </div>
+      {/* ── Export ── */}
+      <ExportPanel />
 
+      {/* ── Clear All ── */}
       {features.length > 0 && (
         <button
-          className="relative z-1 px-5 py-3 bg-transparent border-0 border-t border-divider text-text-tertiary text-xs font-body cursor-pointer transition-all duration-200 text-center shrink-0 hover:text-danger hover:bg-danger-dim"
+          className="px-5 py-3 bg-transparent border-0 border-t border-divider text-text-tertiary text-xs font-body cursor-pointer transition-all duration-200 text-center shrink-0 hover:text-danger hover:bg-danger-dim"
           onClick={handleClear}
         >
           Clear all layers

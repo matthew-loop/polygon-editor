@@ -23,26 +23,26 @@ export function ExportPanel() {
   };
 
   return (
-    <div className="flex flex-col gap-2.5 px-5 pt-3 pb-2 shrink-0">
-      <div className="flex items-center justify-between">
-        <span className="text-[0.6875rem] font-semibold tracking-widest uppercase text-text-secondary">Export</span>
-      </div>
-      <div className="flex bg-bg-surface rounded-sm p-[3px] gap-[3px]">
+    <div className="flex flex-col gap-2.5 px-5 pt-3 pb-3 shrink-0">
+      <span className="text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-text-tertiary font-display">
+        Export
+      </span>
+      <div className="flex gap-2">
         <button
-          className={`flex-1 px-3 py-1.5 border-none rounded text-xs font-semibold font-body cursor-pointer transition-all duration-200 tracking-wide ${
+          className={`flex-1 px-3 py-1.5 rounded-xl text-xs font-semibold font-body cursor-pointer transition-all duration-200 tracking-wide ${
             format === 'kml'
-              ? 'bg-bg-elevated text-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
-              : 'bg-transparent text-text-secondary hover:text-text-primary'
+              ? 'bg-accent-dim text-accent border border-accent/25'
+              : 'bg-transparent text-text-secondary border border-transparent hover:text-text-primary hover:bg-bg-hover'
           }`}
           onClick={() => setFormat('kml')}
         >
           KML
         </button>
         <button
-          className={`flex-1 px-3 py-1.5 border-none rounded text-xs font-semibold font-body cursor-pointer transition-all duration-200 tracking-wide ${
+          className={`flex-1 px-3 py-1.5 rounded-xl text-xs font-semibold font-body cursor-pointer transition-all duration-200 tracking-wide ${
             format === 'geojson'
-              ? 'bg-bg-elevated text-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
-              : 'bg-transparent text-text-secondary hover:text-text-primary'
+              ? 'bg-accent-dim text-accent border border-accent/25'
+              : 'bg-transparent text-text-secondary border border-transparent hover:text-text-primary hover:bg-bg-hover'
           }`}
           onClick={() => setFormat('geojson')}
         >
@@ -52,7 +52,7 @@ export function ExportPanel() {
       <button
         onClick={handleExport}
         disabled={features.length === 0}
-        className="px-4 py-2 bg-success-dim text-success border border-[rgba(5,150,105,0.2)] rounded-sm cursor-pointer text-[0.8125rem] font-medium font-body transition-all duration-200 flex items-center justify-center gap-2 hover:not-disabled:bg-[rgba(5,150,105,0.16)] hover:not-disabled:border-[rgba(5,150,105,0.35)] active:not-disabled:scale-[0.97] disabled:opacity-35 disabled:cursor-not-allowed"
+        className="glossy-btn-secondary px-4 py-[7px] bg-accent-dim text-accent border border-accent/20 rounded-xl cursor-pointer text-[0.8125rem] font-medium font-body flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <svg
           className="w-3.5 h-3.5"
@@ -71,7 +71,7 @@ export function ExportPanel() {
             strokeLinecap="round"
           />
         </svg>
-        Download
+        Download {format.toUpperCase()}
       </button>
     </div>
   );
