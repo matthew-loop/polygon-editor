@@ -7,43 +7,58 @@ export function FileUpload() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const loadFeatures = usePolygonStore((state) => state.loadFeatures);
+  const appendFeatures = usePolygonStore((state) => state.appendFeatures);
 
-  const handleFile = useCallback(
-    async (file: File) => {
-      if (!file.name.toLowerCase().endsWith('.kml')) {
-        setError('Please select a KML file');
+  const handleFiles = useCallback(
+    async (files: FileList) => {
+      const kmlFiles = Array.from(files).filter((f) =>
+        f.name.toLowerCase().endsWith('.kml')
+      );
+
+      if (kmlFiles.length === 0) {
+        setError('Please select KML file(s)');
         return;
       }
 
       setIsLoading(true);
       setError(null);
 
-      try {
-        const features = await parseKmlFile(file);
-        if (features.length === 0) {
-          setError('No polygons found in KML file');
-        } else {
-          loadFeatures(features);
+      let errorCount = 0;
+      const allFeatures: Awaited<ReturnType<typeof parseKmlFile>> = [];
+
+      for (const file of kmlFiles) {
+        try {
+          const features = await parseKmlFile(file);
+          allFeatures.push(...features);
+        } catch (err) {
+          console.error('Error parsing KML:', file.name, err);
+          errorCount++;
         }
-      } catch (err) {
-        console.error('Error parsing KML:', err);
-        setError('Failed to parse KML file');
-      } finally {
-        setIsLoading(false);
       }
+
+      if (allFeatures.length > 0) {
+        appendFeatures(allFeatures);
+      }
+
+      if (errorCount > 0) {
+        setError(`Failed to parse ${errorCount} file(s)`);
+      } else if (allFeatures.length === 0) {
+        setError('No polygons found in KML file(s)');
+      }
+
+      setIsLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     },
-    [loadFeatures]
+    [appendFeatures]
   );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
     },
-    [handleFile]
+    [handleFiles]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -58,10 +73,9 @@ export function FileUpload() {
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
+      if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files);
     },
-    [handleFile]
+    [handleFiles]
   );
 
   const handleClick = () => fileInputRef.current?.click();
@@ -82,6 +96,7 @@ export function FileUpload() {
         ref={fileInputRef}
         type="file"
         accept=".kml"
+        multiple
         onChange={handleInputChange}
         style={{ display: 'none' }}
       />
@@ -119,7 +134,7 @@ export function FileUpload() {
               Upload KML
             </div>
             <div className="text-[0.6875rem] text-text-tertiary">
-              Drop file or click to browse
+              Drop file(s) or click to browse
             </div>
           </>
         )}

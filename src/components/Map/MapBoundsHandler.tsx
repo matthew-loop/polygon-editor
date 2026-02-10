@@ -11,7 +11,8 @@ export function MapBoundsHandler() {
 
   // Fit bounds when features are first loaded
   useEffect(() => {
-    if (features.length > 0 && prevFeaturesLength.current === 0) {
+    const prevLength = prevFeaturesLength.current;
+    if (features.length > 0 && (prevLength === 0 || features.length - prevLength > 1)) {
       const geoJsonLayer = L.geoJSON(
         features.map((f) => ({
           type: 'Feature' as const,

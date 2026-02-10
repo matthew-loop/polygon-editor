@@ -15,6 +15,7 @@ interface PolygonStore {
   deleteFeature: (id: string) => void;
   selectFeature: (id: string | null) => void;
   editFeature: (id: string | null) => void;
+  appendFeatures: (newFeatures: PolygonFeature[]) => void;
   clearAll: () => void;
   setUnsavedChanges: (value: boolean) => void;
   startDrawing: () => void;
@@ -35,6 +36,12 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       editingFeatureId: null,
       hasUnsavedChanges: false,
     }),
+
+  appendFeatures: (newFeatures) =>
+    set((state) => ({
+      features: [...state.features, ...newFeatures],
+      hasUnsavedChanges: true,
+    })),
 
   addFeature: (feature) =>
     set((state) => ({
