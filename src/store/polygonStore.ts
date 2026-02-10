@@ -6,6 +6,7 @@ interface PolygonStore {
   selectedFeatureId: string | null;
   editingFeatureId: string | null;
   hasUnsavedChanges: boolean;
+  isDrawing: boolean;
 
   // Actions
   loadFeatures: (features: PolygonFeature[]) => void;
@@ -16,6 +17,8 @@ interface PolygonStore {
   editFeature: (id: string | null) => void;
   clearAll: () => void;
   setUnsavedChanges: (value: boolean) => void;
+  startDrawing: () => void;
+  stopDrawing: () => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -23,6 +26,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   selectedFeatureId: null,
   editingFeatureId: null,
   hasUnsavedChanges: false,
+  isDrawing: false,
 
   loadFeatures: (features) =>
     set({
@@ -82,5 +86,16 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   setUnsavedChanges: (value) =>
     set({
       hasUnsavedChanges: value,
+    }),
+
+  startDrawing: () =>
+    set({
+      isDrawing: true,
+      editingFeatureId: null,
+    }),
+
+  stopDrawing: () =>
+    set({
+      isDrawing: false,
     }),
 }));

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faFloppyDisk, faTrash } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonFeature } from '../../types/polygon';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface PolygonListItemProps {
   feature: PolygonFeature;
@@ -56,11 +57,11 @@ export function PolygonListItem({
     }
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`Delete "${feature.name}"?`)) {
-      onDelete();
-    }
+    setShowDeleteConfirm(true);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -127,6 +128,19 @@ export function PolygonListItem({
           </button>
         )}
       </div>
+      {showDeleteConfirm && (
+        <ConfirmModal
+          title="Delete polygon"
+          message={`Are you sure you want to delete "${feature.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            onDelete();
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }

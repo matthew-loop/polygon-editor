@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { usePolygonStore } from '../../store/polygonStore';
 import { useThemeStore } from '../../store/themeStore';
 import { PolygonListItem } from './PolygonListItem';
 import { SimplifyPanel } from './SimplifyPanel';
 import { FileUpload } from '../FileUpload';
 import { ExportPanel } from '../ExportPanel';
+import { ConfirmModal } from '../ConfirmModal';
 
 export function Sidebar() {
   const features = usePolygonStore((state) => state.features);
@@ -15,9 +17,14 @@ export function Sidebar() {
   const deleteFeature = usePolygonStore((state) => state.deleteFeature);
   const updateFeature = usePolygonStore((state) => state.updateFeature);
   const clearAll = usePolygonStore((state) => state.clearAll);
+  const isDrawing = usePolygonStore((state) => state.isDrawing);
+  const startDrawing = usePolygonStore((state) => state.startDrawing);
+  const stopDrawing = usePolygonStore((state) => state.stopDrawing);
 
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleNameChange = (id: string, newName: string) => {
     updateFeature(id, {
@@ -31,13 +38,8 @@ export function Sidebar() {
 
   const handleClear = () => {
     if (hasUnsavedChanges) {
-      if (
-        !confirm(
-          'You have unsaved changes. Are you sure you want to clear all polygons?'
-        )
-      ) {
-        return;
-      }
+      setShowClearConfirm(true);
+      return;
     }
     clearAll();
   };
@@ -100,14 +102,34 @@ export function Sidebar() {
 
       {/* ── Layers Header ── */}
       <div className="flex items-center justify-between px-5 pt-3.5 pb-2 shrink-0">
-        <span className="text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-text-tertiary font-display">
-          Layers
-        </span>
-        {features.length > 0 && (
-          <span className="text-[0.625rem] font-bold text-accent bg-accent-dim px-2.5 py-0.5 rounded-full tabular-nums tracking-wide">
-            {features.length}
+        <div className="flex items-center gap-2">
+          <span className="text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-text-tertiary font-display">
+            Layers
           </span>
-        )}
+          {features.length > 0 && (
+            <span className="text-[0.625rem] font-bold text-accent bg-accent-dim px-2.5 py-0.5 rounded-full tabular-nums tracking-wide">
+              {features.length}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={isDrawing ? stopDrawing : startDrawing}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border ${
+            isDrawing
+              ? 'bg-accent text-white border-accent'
+              : 'bg-accent-dim text-accent border-transparent hover:bg-accent/20'
+          }`}
+          title={isDrawing ? 'Cancel drawing' : 'Draw new polygon'}
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            {isDrawing ? (
+              <path d="M4 4L12 12M12 4L4 12" />
+            ) : (
+              <path d="M8 3V13M3 8H13" />
+            )}
+          </svg>
+          {isDrawing ? 'Cancel' : 'Draw'}
+        </button>
       </div>
 
       {/* ── Polygon List ── */}
@@ -170,6 +192,19 @@ export function Sidebar() {
         >
           Clear all layers
         </button>
+      )}
+      {showClearConfirm && (
+        <ConfirmModal
+          title="Clear all layers"
+          message="You have unsaved changes. Are you sure you want to clear all polygons?"
+          confirmLabel="Clear all"
+          danger
+          onConfirm={() => {
+            setShowClearConfirm(false);
+            clearAll();
+          }}
+          onCancel={() => setShowClearConfirm(false)}
+        />
       )}
     </aside>
   );
