@@ -20,6 +20,8 @@ export function Sidebar() {
   const isDrawing = usePolygonStore((state) => state.isDrawing);
   const startDrawing = usePolygonStore((state) => state.startDrawing);
   const stopDrawing = usePolygonStore((state) => state.stopDrawing);
+  const hiddenFeatureIds = usePolygonStore((state) => state.hiddenFeatureIds);
+  const toggleFeatureVisibility = usePolygonStore((state) => state.toggleFeatureVisibility);
 
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -164,12 +166,14 @@ export function Sidebar() {
               feature={feature}
               isSelected={feature.id === selectedFeatureId}
               isEditing={feature.id === editingFeatureId}
+              isHidden={hiddenFeatureIds.has(feature.id)}
               onSelect={() => selectFeature(feature.id)}
               onEdit={() =>
                 editFeature(editingFeatureId === feature.id ? null : feature.id)
               }
               onDelete={() => deleteFeature(feature.id)}
               onNameChange={(newName) => handleNameChange(feature.id, newName)}
+              onToggleVisibility={() => toggleFeatureVisibility(feature.id)}
               index={index}
             />
           ))

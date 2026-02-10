@@ -51,6 +51,7 @@ export function GeomanLayer() {
   const features = usePolygonStore((s) => s.features);
   const selectedFeatureId = usePolygonStore((s) => s.selectedFeatureId);
   const editingFeatureId = usePolygonStore((s) => s.editingFeatureId);
+  const hiddenFeatureIds = usePolygonStore((s) => s.hiddenFeatureIds);
   const selectFeature = usePolygonStore((s) => s.selectFeature);
 
   const handleLayerClick = useCallback(
@@ -179,17 +180,19 @@ export function GeomanLayer() {
     const layerMap = layerMapRef.current;
     const currentIds = new Set(features.map((f) => f.id));
 
-    // 1. Remove layers for features that no longer exist
+    // 1. Remove layers for features that no longer exist or are hidden
     for (const [id, layer] of layerMap) {
-      if (!currentIds.has(id)) {
+      if (!currentIds.has(id) || hiddenFeatureIds.has(id)) {
         layer.pm.disable();
         map.removeLayer(layer);
         layerMap.delete(id);
       }
     }
 
-    // 2. Add or update layers for each feature
+    // 2. Add or update layers for each visible feature
     features.forEach((feature) => {
+      if (hiddenFeatureIds.has(feature.id)) return;
+
       const isSelected = feature.id === selectedFeatureId;
       const isEditing = feature.id === editingFeatureId;
       const existingLayer = layerMap.get(feature.id);
@@ -238,7 +241,7 @@ export function GeomanLayer() {
         layerMap.set(feature.id, polygon);
       }
     });
-  }, [features, selectedFeatureId, editingFeatureId, map, handleLayerClick, theme]);
+  }, [features, selectedFeatureId, editingFeatureId, hiddenFeatureIds, map, handleLayerClick, theme]);
 
   // ── Cleanup all layers on unmount ────────────────────────────────
   useEffect(() => {

@@ -7,6 +7,7 @@ interface PolygonStore {
   editingFeatureId: string | null;
   hasUnsavedChanges: boolean;
   isDrawing: boolean;
+  hiddenFeatureIds: Set<string>;
 
   // Actions
   loadFeatures: (features: PolygonFeature[]) => void;
@@ -20,6 +21,7 @@ interface PolygonStore {
   setUnsavedChanges: (value: boolean) => void;
   startDrawing: () => void;
   stopDrawing: () => void;
+  toggleFeatureVisibility: (id: string) => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -28,6 +30,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   editingFeatureId: null,
   hasUnsavedChanges: false,
   isDrawing: false,
+  hiddenFeatureIds: new Set(),
 
   loadFeatures: (features) =>
     set({
@@ -88,6 +91,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       selectedFeatureId: null,
       editingFeatureId: null,
       hasUnsavedChanges: false,
+      hiddenFeatureIds: new Set(),
     }),
 
   setUnsavedChanges: (value) =>
@@ -104,5 +108,16 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   stopDrawing: () =>
     set({
       isDrawing: false,
+    }),
+
+  toggleFeatureVisibility: (id) =>
+    set((state) => {
+      const next = new Set(state.hiddenFeatureIds);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return { hiddenFeatureIds: next };
     }),
 }));
