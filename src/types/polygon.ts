@@ -19,8 +19,8 @@ export interface PolygonFeature {
 }
 
 export const DEFAULT_STYLE: PolygonStyle = {
-  fillColor: '#3388ff',
-  fillOpacity: 0.3,
-  strokeColor: '#3388ff',
-  strokeWidth: 3,
+  fillColor: '#4f46e5',
+  fillOpacity: 0.2,
+  strokeColor: '#4f46e5',
+  strokeWidth: 2,
 };

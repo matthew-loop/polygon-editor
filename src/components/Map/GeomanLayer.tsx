@@ -4,33 +4,32 @@ import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import { usePolygonStore } from '../../store/polygonStore';
+import { useThemeStore } from '../../store/themeStore';
 import { DEFAULT_STYLE } from '../../types/polygon';
 import type { PolygonFeature } from '../../types/polygon';
 import type { Polygon } from 'geojson';
 
 type ExtendedPolygon = L.Polygon & { featureId?: string };
 
-const SELECTED_STYLE = {
-  color: '#ff7800',
-  weight: 4,
-  fillOpacity: 0.5,
-} as const;
+function getCssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
 
-function featureStyle(feature: PolygonFeature, selected: boolean): L.PolylineOptions {
-  const { style } = feature.properties;
+function featureStyle(selected: boolean): L.PolylineOptions {
+  const accent = getCssVar('--color-accent');
   if (selected) {
     return {
-      fillColor: style.fillColor,
-      fillOpacity: SELECTED_STYLE.fillOpacity,
-      color: SELECTED_STYLE.color,
-      weight: SELECTED_STYLE.weight,
+      fillColor: accent,
+      fillOpacity: 0.3,
+      color: getCssVar('--color-editing'),
+      weight: 3,
     };
   }
   return {
-    fillColor: style.fillColor,
-    fillOpacity: style.fillOpacity,
-    color: style.strokeColor,
-    weight: style.strokeWidth,
+    fillColor: accent,
+    fillOpacity: 0.15,
+    color: accent,
+    weight: 2,
   };
 }
 
@@ -63,12 +62,15 @@ export function GeomanLayer() {
     [selectFeature]
   );
 
-  // ── Geoman toolbar + events (runs once per map) ──────────────────
+  const isDrawing = usePolygonStore((s) => s.isDrawing);
+  const theme = useThemeStore((s) => s.theme);
+
+  // ── Geoman setup + events (runs once per map) ──────────────────
   useEffect(() => {
-    // Add Geoman controls — only polygon drawing, edit, and remove
+    // No toolbar — drawing is triggered from the sidebar
     map.pm.addControls({
       position: 'topright',
-      drawPolygon: true,
+      drawPolygon: false,
       drawMarker: false,
       drawPolyline: false,
       drawRectangle: false,
@@ -82,12 +84,13 @@ export function GeomanLayer() {
       removalMode: false,
     });
 
+    const accent = getCssVar('--color-accent');
     map.pm.setGlobalOptions({
       pathOptions: {
-        color: DEFAULT_STYLE.strokeColor,
-        fillColor: DEFAULT_STYLE.fillColor,
-        fillOpacity: DEFAULT_STYLE.fillOpacity,
-        weight: DEFAULT_STYLE.strokeWidth,
+        color: accent,
+        fillColor: accent,
+        fillOpacity: 0.2,
+        weight: 2,
       },
       snappable: true,
     });
@@ -98,6 +101,7 @@ export function GeomanLayer() {
     };
     const onDrawEnd = () => {
       isDrawingRef.current = false;
+      usePolygonStore.getState().stopDrawing();
     };
 
     const onCreate = (e: { layer: L.Layer }) => {
@@ -136,6 +140,28 @@ export function GeomanLayer() {
     };
   }, [map]);
 
+  // ── Update draw style when theme changes ────────────────────────
+  useEffect(() => {
+    const accent = getCssVar('--color-accent');
+    map.pm.setGlobalOptions({
+      pathOptions: {
+        color: accent,
+        fillColor: accent,
+        fillOpacity: 0.2,
+        weight: 2,
+      },
+    });
+  }, [theme, map]);
+
+  // ── Toggle draw mode when isDrawing changes ────────────────────
+  useEffect(() => {
+    if (isDrawing) {
+      map.pm.enableDraw('Polygon');
+    } else if (map.pm.globalDrawModeEnabled()) {
+      map.pm.disableDraw();
+    }
+  }, [isDrawing, map]);
+
   // ── Diff-based layer sync ────────────────────────────────────────
   useEffect(() => {
     const layerMap = layerMapRef.current;
@@ -161,7 +187,7 @@ export function GeomanLayer() {
         if (!existingLayer.pm.enabled()) {
           existingLayer.setLatLngs(toLatLngs(feature.geometry));
         }
-        existingLayer.setStyle(featureStyle(feature, isSelected));
+        existingLayer.setStyle(featureStyle(isSelected));
 
         // Update tooltip content only when name changed
         if (existingLayer.getTooltip()?.getContent() !== feature.name) {
@@ -177,7 +203,7 @@ export function GeomanLayer() {
         }
       } else {
         // Create new layer
-        const polygon = L.polygon(toLatLngs(feature.geometry), featureStyle(feature, isSelected)) as ExtendedPolygon;
+        const polygon = L.polygon(toLatLngs(feature.geometry), featureStyle(isSelected)) as ExtendedPolygon;
         polygon.featureId = feature.id;
         polygon.bindTooltip(feature.name, { sticky: true });
 
@@ -200,7 +226,7 @@ export function GeomanLayer() {
         layerMap.set(feature.id, polygon);
       }
     });
-  }, [features, selectedFeatureId, editingFeatureId, map, handleLayerClick]);
+  }, [features, selectedFeatureId, editingFeatureId, map, handleLayerClick, theme]);
 
   // ── Cleanup all layers on unmount ────────────────────────────────
   useEffect(() => {
