@@ -246,6 +246,77 @@
   color: #ef4444;
 }
 
+/* Simplify Panel */
+.simplify-panel {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simplify-header {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.simplify-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.simplify-arrow {
+  color: #9ca3af;
+}
+
+.simplify-reduced {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.simplify-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simplify-slider-row label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.simplify-slider-row input[type='range'] {
+  flex: 1;
+  height: 4px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.simplify-apply-btn {
+  padding: 6px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.2s;
+}
+
+.simplify-apply-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.simplify-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Map Container */
 .map-container {
   flex: 1;

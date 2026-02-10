@@ -1,5 +1,6 @@
 import { usePolygonStore } from '../../store/polygonStore';
 import { PolygonListItem } from './PolygonListItem';
+import { SimplifyPanel } from './SimplifyPanel';
 
 export function Sidebar() {
   const features = usePolygonStore((state) => state.features);
@@ -42,6 +43,7 @@ export function Sidebar() {
           ))
         )}
       </div>
+      <SimplifyPanel />
     </div>
   );
 }
