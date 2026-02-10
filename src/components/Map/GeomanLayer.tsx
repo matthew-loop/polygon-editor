@@ -63,6 +63,18 @@ export function GeomanLayer() {
     [selectFeature]
   );
 
+  // Click empty map space to deselect (only when not editing or drawing)
+  useEffect(() => {
+    const handleMapClick = () => {
+      const { editingFeatureId, selectedFeatureId, isDrawing } = usePolygonStore.getState();
+      if (!editingFeatureId && selectedFeatureId && !isDrawing && !isDrawingRef.current) {
+        selectFeature(null);
+      }
+    };
+    map.on('click', handleMapClick);
+    return () => { map.off('click', handleMapClick); };
+  }, [map, selectFeature]);
+
   const isDrawing = usePolygonStore((s) => s.isDrawing);
   const theme = useThemeStore((s) => s.theme);
 

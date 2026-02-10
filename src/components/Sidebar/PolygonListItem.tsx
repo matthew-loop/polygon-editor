@@ -109,7 +109,7 @@ export function PolygonListItem({
             ? 'border-accent/20 bg-accent-dim shadow-accent-glow'
             : 'hover:bg-bg-hover'
       }`}
-      onClick={onSelect}
+      onClick={(e) => { e.stopPropagation(); onSelect(); }}
       onDoubleClick={handleDoubleClick}
       style={{ animationDelay: `${index * 40}ms` }}
     >

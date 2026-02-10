@@ -135,7 +135,10 @@ export function Sidebar() {
       </div>
 
       {/* ── Polygon List ── */}
-      <div className="flex-1 overflow-y-auto px-3 py-1 min-h-[80px]">
+      <div
+        className="flex-1 overflow-y-auto px-3 py-1 min-h-[80px]"
+        onClick={() => { if (!editingFeatureId && selectedFeatureId) selectFeature(null); }}
+      >
         {features.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center gap-3">
             <svg className="w-12 h-12 text-text-tertiary opacity-20" viewBox="0 0 48 48" fill="none">
@@ -167,7 +170,9 @@ export function Sidebar() {
               isSelected={feature.id === selectedFeatureId}
               isEditing={feature.id === editingFeatureId}
               isHidden={hiddenFeatureIds.has(feature.id)}
-              onSelect={() => selectFeature(feature.id)}
+              onSelect={() => selectFeature(
+                !editingFeatureId && feature.id === selectedFeatureId ? null : feature.id
+              )}
               onEdit={() =>
                 editFeature(editingFeatureId === feature.id ? null : feature.id)
               }
