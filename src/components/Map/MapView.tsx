@@ -1,5 +1,6 @@
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { GeomanLayer } from './GeomanLayer';
+import { LabelToggleControl } from './LabelToggleControl';
 import { MapBoundsHandler } from './MapBoundsHandler';
 import { useThemeStore } from '../../store/themeStore';
 import 'leaflet/dist/leaflet.css';
@@ -26,6 +27,7 @@ export function MapView() {
       />
       <ZoomControl position="bottomright" />
       <GeomanLayer />
+      <LabelToggleControl />
       <MapBoundsHandler />
     </MapContainer>
   );

@@ -132,6 +132,82 @@ input[type='range'].simplify-slider::-moz-range-thumb {
   border-right-color: var(--color-panel-bg) !important;
 }
 
+/* ── Permanent Polygon Labels ── */
+
+.polygon-label {
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  font-weight: 500 !important;
+}
+
+.polygon-label::before {
+  display: none !important;
+}
+
+/* ── Label Toggle Control ── */
+
+.label-toggle-btn {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 11px;
+  gap: 0;
+  background: var(--color-panel-bg);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  cursor: pointer;
+  font-size: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: gap 0.25s var(--ease-out), padding 0.25s var(--ease-out),
+    background 0.2s var(--ease-out), color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.label-toggle-icon {
+  flex-shrink: 0;
+  width: 14px;
+}
+
+.label-toggle-text {
+  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: max-width 0.3s var(--ease-out), opacity 0.2s var(--ease-out);
+}
+
+.label-toggle-btn:hover {
+  gap: 8px;
+  padding: 0 14px;
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.label-toggle-btn:hover .label-toggle-text {
+  max-width: 120px;
+  opacity: 1;
+}
+
+/* Active state */
+
+.label-toggle-active {
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
+  box-shadow: var(--shadow-panel), 0 0 0 1px var(--color-accent-dim);
+}
+
+.label-toggle-active:hover {
+  color: var(--color-accent);
+}
+
 /* ── Geoman Toolbar — Glossy ── */
 
 .leaflet-pm-toolbar {

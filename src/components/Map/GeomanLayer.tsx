@@ -47,11 +47,13 @@ export function GeomanLayer() {
 
   // Track whether Geoman is actively drawing
   const isDrawingRef = useRef(false);
+  const prevShowLabelsRef = useRef(false);
 
   const features = usePolygonStore((s) => s.features);
   const selectedFeatureId = usePolygonStore((s) => s.selectedFeatureId);
   const editingFeatureId = usePolygonStore((s) => s.editingFeatureId);
   const hiddenFeatureIds = usePolygonStore((s) => s.hiddenFeatureIds);
+  const showLabels = usePolygonStore((s) => s.showLabels);
   const selectFeature = usePolygonStore((s) => s.selectFeature);
 
   const handleLayerClick = useCallback(
@@ -216,10 +218,18 @@ export function GeomanLayer() {
         }
         existingLayer.setStyle(featureStyle(isSelected));
 
-        // Update tooltip content only when name changed
-        if (existingLayer.getTooltip()?.getContent() !== feature.name) {
+        // Rebind tooltip when name or label mode changes
+        if (
+          existingLayer.getTooltip()?.getContent() !== feature.name ||
+          showLabels !== prevShowLabelsRef.current
+        ) {
           existingLayer.unbindTooltip();
-          existingLayer.bindTooltip(feature.name, { sticky: true });
+          existingLayer.bindTooltip(
+            feature.name,
+            showLabels
+              ? { permanent: true, direction: 'center', className: 'polygon-label', offset: [0, 0] }
+              : { sticky: true }
+          );
         }
 
         // Toggle edit mode based on editingFeatureId
@@ -232,7 +242,12 @@ export function GeomanLayer() {
         // Create new layer
         const polygon = L.polygon(toLatLngs(feature.geometry), featureStyle(isSelected)) as ExtendedPolygon;
         polygon.featureId = feature.id;
-        polygon.bindTooltip(feature.name, { sticky: true });
+        polygon.bindTooltip(
+          feature.name,
+          showLabels
+            ? { permanent: true, direction: 'center', className: 'polygon-label', offset: [0, 0] }
+            : { sticky: true }
+        );
 
         // Click to select
         polygon.on('click', () => handleLayerClick(feature.id));
@@ -253,7 +268,8 @@ export function GeomanLayer() {
         layerMap.set(feature.id, polygon);
       }
     });
-  }, [features, selectedFeatureId, editingFeatureId, hiddenFeatureIds, map, handleLayerClick, theme]);
+    prevShowLabelsRef.current = showLabels;
+  }, [features, selectedFeatureId, editingFeatureId, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
 
   // ── Cleanup all layers on unmount ────────────────────────────────
   useEffect(() => {

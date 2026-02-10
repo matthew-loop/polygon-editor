@@ -22,6 +22,8 @@ interface PolygonStore {
   startDrawing: () => void;
   stopDrawing: () => void;
   toggleFeatureVisibility: (id: string) => void;
+  showLabels: boolean;
+  toggleLabels: () => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -31,6 +33,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   hasUnsavedChanges: false,
   isDrawing: false,
   hiddenFeatureIds: new Set(),
+  showLabels: false,
 
   loadFeatures: (features) =>
     set({
@@ -109,6 +112,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
     set({
       isDrawing: false,
     }),
+
+  toggleLabels: () =>
+    set((state) => ({ showLabels: !state.showLabels })),
 
   toggleFeatureVisibility: (id) =>
     set((state) => {
