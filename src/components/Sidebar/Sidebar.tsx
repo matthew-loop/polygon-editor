@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faFolderPlus } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faFolderPlus, faRotateLeft, faRotateRight } from '@fortawesome/free-solid-svg-icons';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { usePolygonStore } from '../../store/polygonStore';
@@ -12,6 +12,8 @@ import { SimplifyPanel } from './SimplifyPanel';
 import { FileUpload } from '../FileUpload';
 import { ExportPanel } from '../ExportPanel';
 import { ConfirmModal } from '../ConfirmModal';
+import { useTemporalStore } from '../../hooks/useTemporalStore';
+import { performUndo, performRedo } from '../../utils/undoRedo';
 
 function UngroupedDropZone({ children }: { children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -67,6 +69,9 @@ export function Sidebar() {
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
+  const canUndo = useTemporalStore((s) => s.pastStates.length > 0);
+  const canRedo = useTemporalStore((s) => s.futureStates.length > 0);
+
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleNameChange = (id: string, newName: string) => {
@@ -90,6 +95,7 @@ export function Sidebar() {
       return;
     }
     clearAll();
+    usePolygonStore.temporal.getState().clear();
   };
 
   const ungroupedFeatures = useMemo(
@@ -196,6 +202,24 @@ export function Sidebar() {
             title="Unsaved changes"
           />
         )}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            onClick={performUndo}
+            disabled={!canUndo}
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border border-transparent text-text-secondary cursor-pointer transition-all duration-200 hover:bg-bg-hover hover:text-text-primary hover:border-panel-border disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-text-secondary disabled:hover:border-transparent"
+            title="Undo (Ctrl+Z)"
+          >
+            <FontAwesomeIcon icon={faRotateLeft} className="text-[0.7rem]" />
+          </button>
+          <button
+            onClick={performRedo}
+            disabled={!canRedo}
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border border-transparent text-text-secondary cursor-pointer transition-all duration-200 hover:bg-bg-hover hover:text-text-primary hover:border-panel-border disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-text-secondary disabled:hover:border-transparent"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <FontAwesomeIcon icon={faRotateRight} className="text-[0.7rem]" />
+          </button>
+        </div>
         <button
           onClick={toggleTheme}
           className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent border border-transparent text-text-secondary cursor-pointer transition-all duration-200 hover:bg-bg-hover hover:text-text-primary hover:border-panel-border"
@@ -438,6 +462,7 @@ export function Sidebar() {
           onConfirm={() => {
             setShowClearConfirm(false);
             clearAll();
+            usePolygonStore.temporal.getState().clear();
           }}
           onCancel={() => setShowClearConfirm(false)}
         />

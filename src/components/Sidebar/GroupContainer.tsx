@@ -296,7 +296,7 @@ export function GroupContainer({ group, featureCount, commonColor, children }: G
       {showDeleteConfirm && (
         <ConfirmModal
           title="Delete group"
-          message={`Delete "${group.name}" and its ${featureCount} polygon${featureCount !== 1 ? 's' : ''}? This cannot be undone.`}
+          message={`Delete "${group.name}" and its ${featureCount} polygon${featureCount !== 1 ? 's' : ''}? You can undo with Ctrl+Z.`}
           confirmLabel="Delete"
           danger
           onConfirm={() => {

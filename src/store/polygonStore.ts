@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { temporal } from 'zundo';
 import type { PolygonFeature, PolygonGroup } from '../types/polygon';
 import type { Polygon } from 'geojson';
 import { mergePolygons } from '../utils/mergePolygons';
@@ -77,7 +78,9 @@ interface PolygonStore {
   reorderGroup: (groupId: string, insertBeforeGroupId: string | null) => void;
 }
 
-export const usePolygonStore = create<PolygonStore>((set) => ({
+export const usePolygonStore = create<PolygonStore>()(
+  temporal(
+    (set) => ({
   features: [],
   selectedFeatureId: null,
   editingFeatureId: null,
@@ -573,7 +576,18 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
 
       return { groups };
     }),
-}));
+    }),
+    {
+      partialize: (state) => ({
+        features: state.features,
+        groups: state.groups,
+      }),
+      limit: 50,
+      equality: (past, current) =>
+        past.features === current.features && past.groups === current.groups,
+    },
+  ),
+);
 
 if (import.meta.env.DEV || import.meta.env.VITE_E2E) {
   (window as any).__polygonStore = usePolygonStore;

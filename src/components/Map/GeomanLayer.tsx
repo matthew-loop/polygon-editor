@@ -64,6 +64,8 @@ export function GeomanLayer() {
   // Flag to skip the map click handler when a polygon was just clicked
   const layerClickedRef = useRef(false);
   const prevShowLabelsRef = useRef(false);
+  // Track pending edit-debounce timers by feature ID for cleanup
+  const editTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const features = usePolygonStore((s) => s.features);
   const selectedFeatureId = usePolygonStore((s) => s.selectedFeatureId);
@@ -278,6 +280,8 @@ export function GeomanLayer() {
     for (const [id, layer] of layerMap) {
       const f = featureById.get(id);
       if (!f || hiddenFeatureIds.has(id) || (f.groupId && hiddenGroupIds.has(f.groupId))) {
+        const timer = editTimersRef.current.get(id);
+        if (timer) { clearTimeout(timer); editTimersRef.current.delete(id); }
         layer.off();
         layer.pm.disable();
         map.removeLayer(layer);
@@ -360,6 +364,9 @@ export function GeomanLayer() {
           existingLayer.pm.enable();
         } else if (!isEditing && existingLayer.pm.enabled()) {
           existingLayer.pm.disable();
+          // Ensure temporal tracking is resumed if edit mode ends mid-drag
+          const temporal = usePolygonStore.temporal.getState();
+          if (!temporal.isTracking) temporal.resume();
         }
       } else {
         // Create new layer
@@ -389,12 +396,32 @@ export function GeomanLayer() {
           );
         });
 
-        // Edit event — sync geometry back to store
+        // Edit event — sync geometry back to store (debounced for undo batching)
         polygon.on('pm:edit', () => {
+          const temporal = usePolygonStore.temporal.getState();
+          if (temporal.isTracking) temporal.pause();
+
           const geoJson = polygon.toGeoJSON();
           usePolygonStore.getState().updateFeature(feature.id, {
             geometry: geoJson.geometry as Polygon,
           });
+
+          const prevTimer = editTimersRef.current.get(feature.id);
+          if (prevTimer) clearTimeout(prevTimer);
+
+          const timer = setTimeout(() => {
+            editTimersRef.current.delete(feature.id);
+            const currentState = usePolygonStore.getState();
+            // Only finalize snapshot if this feature is still being edited
+            if (currentState.editingFeatureId === feature.id) {
+              temporal.resume();
+              usePolygonStore.setState({ features: [...currentState.features] });
+            } else {
+              // Edit was cancelled — resume tracking without creating a snapshot
+              if (!temporal.isTracking) temporal.resume();
+            }
+          }, 300);
+          editTimersRef.current.set(feature.id, timer);
         });
 
         if (isEditing) {
@@ -446,7 +473,10 @@ export function GeomanLayer() {
   useEffect(() => {
     const layerMap = layerMapRef.current;
     const lastAppliedGeometry = lastAppliedGeometryRef.current;
+    const editTimers = editTimersRef.current;
     return () => {
+      for (const [, timer] of editTimers) clearTimeout(timer);
+      editTimers.clear();
       for (const [, layer] of layerMap) {
         layer.off();
         layer.pm.disable();

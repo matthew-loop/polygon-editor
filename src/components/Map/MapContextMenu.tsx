@@ -208,7 +208,7 @@ export function MapContextMenu() {
       {showDeleteConfirm && feature && (
         <ConfirmModal
           title="Delete polygon"
-          message={`Are you sure you want to delete "${feature.name}"? This cannot be undone.`}
+          message={`Are you sure you want to delete "${feature.name}"?`}
           confirmLabel="Delete"
           danger
           onConfirm={() => {
