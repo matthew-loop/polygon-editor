@@ -16,21 +16,21 @@ function getCssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-function featureStyle(selected: boolean): L.PolylineOptions {
-  const accent = getCssVar('--color-accent');
+function featureStyle(feature: PolygonFeature, selected: boolean): L.PolylineOptions {
+  const { fillColor, fillOpacity, strokeColor, strokeWidth } = feature.properties.style;
   if (selected) {
     return {
-      fillColor: accent,
+      fillColor,
       fillOpacity: 0.3,
       color: getCssVar('--color-editing'),
       weight: 3,
     };
   }
   return {
-    fillColor: accent,
-    fillOpacity: 0.15,
-    color: accent,
-    weight: 2,
+    fillColor,
+    fillOpacity,
+    color: strokeColor,
+    weight: strokeWidth,
   };
 }
 
@@ -331,13 +331,13 @@ export function GeomanLayer() {
           });
         } else if (isSplitting) {
           existingLayer.setStyle({
-            ...featureStyle(true),
+            ...featureStyle(feature, true),
             dashArray: '8,8',
             color: '#d97706',
             weight: 3,
           });
         } else {
-          existingLayer.setStyle(featureStyle(isSelected));
+          existingLayer.setStyle(featureStyle(feature, isSelected));
         }
 
         // Rebind tooltip when name or label mode changes
@@ -362,7 +362,7 @@ export function GeomanLayer() {
         }
       } else {
         // Create new layer
-        const polygon = L.polygon(toLatLngs(feature.geometry), featureStyle(isSelected)) as ExtendedPolygon;
+        const polygon = L.polygon(toLatLngs(feature.geometry), featureStyle(feature, isSelected)) as ExtendedPolygon;
         polygon.featureId = feature.id;
         polygon.bindTooltip(
           feature.name,

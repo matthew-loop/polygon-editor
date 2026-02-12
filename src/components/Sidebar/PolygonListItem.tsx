@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup, faCrosshairs, faExpand } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup, faCrosshairs, faExpand, faPalette } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonFeature } from '../../types/polygon';
 import { ConfirmModal } from '../ConfirmModal';
+import { ColorPickerPopover } from './ColorPickerPopover';
 
 interface PolygonListItemProps {
   feature: PolygonFeature;
@@ -18,6 +19,7 @@ interface PolygonListItemProps {
   onMerge: () => void;
   onFocus: () => void;
   onNameChange: (newName: string) => void;
+  onColorChange: (color: string) => void;
   onToggleVisibility: () => void;
   index: number;
 }
@@ -36,6 +38,7 @@ export function PolygonListItem({
   onMerge,
   onFocus,
   onNameChange,
+  onColorChange,
   onToggleVisibility,
   index,
 }: PolygonListItemProps) {
@@ -94,6 +97,8 @@ export function PolygonListItem({
   };
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const swatchRef = useRef<HTMLButtonElement>(null);
 
   const handleDeleteClick = () => {
     setShowMenu(false);
@@ -118,6 +123,11 @@ export function PolygonListItem({
   const handleFocusClick = () => {
     setShowMenu(false);
     onFocus();
+  };
+
+  const handleColorClick = () => {
+    setShowMenu(false);
+    setShowColorPicker(true);
   };
 
   const handleVisibilityClick = (e: React.MouseEvent) => {
@@ -162,9 +172,15 @@ export function PolygonListItem({
         <FontAwesomeIcon icon={isHidden ? faEyeSlash : faEye} />
       </button>
 
-      <div
-        className={`w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-bg-elevated shadow-[0_0_4px_rgba(0,0,0,0.1)] ${isHidden ? 'opacity-40' : ''}`}
+      <button
+        ref={swatchRef}
+        className={`w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-bg-elevated shadow-[0_0_4px_rgba(0,0,0,0.1)] cursor-pointer hover:ring-accent/40 transition-all duration-150 ${isHidden ? 'opacity-40' : ''}`}
         style={{ backgroundColor: feature.properties.style.fillColor }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowColorPicker(true);
+        }}
+        title="Change color"
       />
       {isRenamingName ? (
         <input
@@ -222,6 +238,13 @@ export function PolygonListItem({
                   <FontAwesomeIcon icon={isFocused ? faExpand : faCrosshairs} className="text-text-tertiary text-[0.6875rem] w-3.5" />
                   {isFocused ? 'Show All' : 'Focus'}
                 </button>
+                <button
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                  onClick={(e) => { e.stopPropagation(); handleColorClick(); }}
+                >
+                  <FontAwesomeIcon icon={faPalette} className="text-text-tertiary text-[0.6875rem] w-3.5" />
+                  Change color
+                </button>
                 <div className="h-px bg-divider mx-2.5 my-1" />
                 <button
                   className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
@@ -270,6 +293,18 @@ export function PolygonListItem({
           onCancel={() => setShowDeleteConfirm(false)}
         />
       )}
+
+      {showColorPicker && (() => {
+        const rect = swatchRef.current?.getBoundingClientRect();
+        return (
+          <ColorPickerPopover
+            color={feature.properties.style.fillColor}
+            onChange={onColorChange}
+            onClose={() => setShowColorPicker(false)}
+            anchorRect={rect ? { top: rect.bottom + 4, left: rect.left } : undefined}
+          />
+        );
+      })()}
     </div>
   );
 }

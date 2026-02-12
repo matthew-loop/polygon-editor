@@ -49,6 +49,17 @@ export function Sidebar() {
     updateFeature(id, { name: newName });
   };
 
+  const handleColorChange = (id: string, color: string) => {
+    const feature = features.find((f) => f.id === id);
+    if (!feature) return;
+    updateFeature(id, {
+      properties: {
+        ...feature.properties,
+        style: { ...feature.properties.style, fillColor: color, strokeColor: color },
+      },
+    });
+  };
+
   const handleClear = () => {
     if (hasUnsavedChanges) {
       setShowClearConfirm(true);
@@ -279,6 +290,7 @@ export function Sidebar() {
               onMerge={() => startMerging(feature.id)}
               isFocused={focusedFeatureId === feature.id}
               onFocus={() => focusedFeatureId === feature.id ? unfocusAll() : focusFeature(feature.id)}
+              onColorChange={(color) => handleColorChange(feature.id, color)}
               onNameChange={(newName) => handleNameChange(feature.id, newName)}
               onToggleVisibility={() => toggleFeatureVisibility(feature.id)}
               index={index}
