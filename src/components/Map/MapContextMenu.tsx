@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCrosshairs, faExpand, faPen, faScissors, faObjectGroup, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCrosshairs, faExpand, faFloppyDisk, faPen, faScissors, faObjectGroup, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { usePolygonStore } from '../../store/polygonStore';
 import { ConfirmModal } from '../ConfirmModal';
 
@@ -24,6 +24,7 @@ function clampPosition(x: number, y: number, menuEl: HTMLDivElement) {
 
 export function MapContextMenu() {
   const contextMenu = usePolygonStore((s) => s.contextMenu);
+  const editingFeatureId = usePolygonStore((s) => s.editingFeatureId);
   const focusedFeatureId = usePolygonStore((s) => s.focusedFeatureId);
   const features = usePolygonStore((s) => s.features);
   const closeContextMenu = usePolygonStore((s) => s.closeContextMenu);
@@ -39,6 +40,7 @@ export function MapContextMenu() {
   const feature = contextMenu
     ? features.find((f) => f.id === contextMenu.featureId)
     : null;
+  const isEditing = contextMenu?.featureId === editingFeatureId;
   const isFocused = contextMenu?.featureId === focusedFeatureId;
 
   // Use callback ref for edge-detection positioning (avoids setState in effect)
@@ -95,7 +97,7 @@ export function MapContextMenu() {
   };
 
   const handleEdit = () => {
-    editFeature(contextMenu.featureId);
+    editFeature(isEditing ? null : contextMenu.featureId);
     closeContextMenu();
   };
 
@@ -139,10 +141,10 @@ export function MapContextMenu() {
         {/* Divider */}
         <div className="h-px bg-divider mx-2.5 my-1" />
 
-        {/* Edit vertices */}
+        {/* Edit vertices / Save changes */}
         <button className={btnClass} onClick={handleEdit}>
-          <FontAwesomeIcon icon={faPen} className={iconClass} />
-          Edit vertices
+          <FontAwesomeIcon icon={isEditing ? faFloppyDisk : faPen} className={iconClass} />
+          {isEditing ? 'Save changes' : 'Edit vertices'}
         </button>
 
         {/* Split */}
