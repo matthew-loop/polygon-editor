@@ -7,6 +7,7 @@ export function MapBoundsHandler() {
   const map = useMap();
   const features = usePolygonStore((state) => state.features);
   const selectedFeatureId = usePolygonStore((state) => state.selectedFeatureId);
+  const editingFeatureId = usePolygonStore((state) => state.editingFeatureId);
   const prevFeaturesLength = useRef(0);
 
   // Fit bounds when features are first loaded
@@ -31,7 +32,7 @@ export function MapBoundsHandler() {
 
   // Fly to selected polygon
   useEffect(() => {
-    if (!selectedFeatureId) return;
+    if (!selectedFeatureId || editingFeatureId) return;
     const feature = features.find((f) => f.id === selectedFeatureId);
     if (!feature) return;
 
@@ -40,7 +41,7 @@ export function MapBoundsHandler() {
     if (bounds.isValid()) {
       map.flyToBounds(bounds, { paddingTopLeft: [400, 80], paddingBottomRight: [80, 80], maxZoom: 13 });
     }
-  }, [selectedFeatureId, features, map]);
+  }, [selectedFeatureId, editingFeatureId, features, map]);
 
   return null;
 }

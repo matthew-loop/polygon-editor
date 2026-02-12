@@ -61,6 +61,8 @@ export function GeomanLayer() {
   const handleLayerClick = useCallback(
     (featureId: string) => {
       if (!isDrawingRef.current) {
+        const { editingFeatureId } = usePolygonStore.getState();
+        if (editingFeatureId && editingFeatureId !== featureId) return;
         selectFeature(featureId);
       }
     },

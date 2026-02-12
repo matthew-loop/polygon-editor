@@ -170,9 +170,12 @@ export function Sidebar() {
               isSelected={feature.id === selectedFeatureId}
               isEditing={feature.id === editingFeatureId}
               isHidden={hiddenFeatureIds.has(feature.id)}
-              onSelect={() => selectFeature(
-                !editingFeatureId && feature.id === selectedFeatureId ? null : feature.id
-              )}
+              onSelect={() => {
+                if (editingFeatureId && editingFeatureId !== feature.id) return;
+                selectFeature(
+                  !editingFeatureId && feature.id === selectedFeatureId ? null : feature.id
+                );
+              }}
               onEdit={() =>
                 editFeature(editingFeatureId === feature.id ? null : feature.id)
               }
