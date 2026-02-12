@@ -109,9 +109,27 @@ export function Sidebar() {
     return map;
   }, [features]);
 
-  const allFeatureIds = useMemo(
-    () => features.map((f) => f.id),
-    [features]
+  const collapsedGroupIds = usePolygonStore((state) => state.collapsedGroupIds);
+
+  const visibleFeatureIds = useMemo(() => {
+    const ids: string[] = [];
+    // Groups first (matching visual order), skipping collapsed groups
+    for (const group of groups) {
+      if (collapsedGroupIds.has(group.id)) continue;
+      for (const f of features) {
+        if (f.groupId === group.id) ids.push(f.id);
+      }
+    }
+    // Then ungrouped features
+    for (const f of features) {
+      if (!f.groupId) ids.push(f.id);
+    }
+    return ids;
+  }, [features, groups, collapsedGroupIds]);
+
+  const groupSortableIds = useMemo(
+    () => groups.map((g) => `group-${g.id}`),
+    [groups]
   );
 
   const makeItemProps = (feature: typeof features[0], index: number) => ({
@@ -355,7 +373,31 @@ export function Sidebar() {
           </div>
         ) : (
           <DndWrapper>
-            <SortableContext items={allFeatureIds} strategy={verticalListSortingStrategy}>
+            <SortableContext items={visibleFeatureIds} strategy={verticalListSortingStrategy}>
+              {/* Groups first */}
+              <SortableContext items={groupSortableIds} strategy={verticalListSortingStrategy}>
+                {groups.map((group) => {
+                  const groupFeatures = groupedFeaturesMap.get(group.id) || [];
+                  const colors = new Set(groupFeatures.map((f) => f.properties.style.fillColor));
+                  const commonColor = colors.size === 1 ? [...colors][0] : null;
+                  return (
+                    <GroupContainer
+                      key={group.id}
+                      group={group}
+                      featureCount={groupFeatures.length}
+                      commonColor={commonColor}
+                    >
+                      {groupFeatures.map((feature, index) => (
+                        <SortablePolygonItem
+                          key={feature.id}
+                          {...makeItemProps(feature, ungroupedFeatures.length + index)}
+                        />
+                      ))}
+                    </GroupContainer>
+                  );
+                })}
+              </SortableContext>
+
               {/* Ungrouped polygons */}
               <UngroupedDropZone>
                 {ungroupedFeatures.map((feature, index) => (
@@ -365,28 +407,6 @@ export function Sidebar() {
                   />
                 ))}
               </UngroupedDropZone>
-
-              {/* Groups */}
-              {groups.map((group) => {
-                const groupFeatures = groupedFeaturesMap.get(group.id) || [];
-                const colors = new Set(groupFeatures.map((f) => f.properties.style.fillColor));
-                const commonColor = colors.size === 1 ? [...colors][0] : null;
-                return (
-                  <GroupContainer
-                    key={group.id}
-                    group={group}
-                    featureCount={groupFeatures.length}
-                    commonColor={commonColor}
-                  >
-                    {groupFeatures.map((feature, index) => (
-                      <SortablePolygonItem
-                        key={feature.id}
-                        {...makeItemProps(feature, ungroupedFeatures.length + index)}
-                      />
-                    ))}
-                  </GroupContainer>
-                );
-              })}
             </SortableContext>
           </DndWrapper>
         )}

@@ -66,6 +66,7 @@ interface PolygonStore {
   setGroupColor: (groupId: string, color: string) => void;
   focusGroup: (groupId: string) => void;
   reorderFeature: (featureId: string, targetGroupId: string | null, insertBeforeId?: string) => void;
+  reorderGroup: (groupId: string, insertBeforeGroupId: string | null) => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -533,6 +534,26 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       }
 
       return { features: without };
+    }),
+
+  reorderGroup: (groupId, insertBeforeGroupId) =>
+    set((state) => {
+      const idx = state.groups.findIndex((g) => g.id === groupId);
+      if (idx === -1) return state;
+
+      const groups = state.groups.filter((g) => g.id !== groupId);
+      if (insertBeforeGroupId) {
+        const beforeIdx = groups.findIndex((g) => g.id === insertBeforeGroupId);
+        if (beforeIdx !== -1) {
+          groups.splice(beforeIdx, 0, state.groups[idx]);
+        } else {
+          groups.push(state.groups[idx]);
+        }
+      } else {
+        groups.push(state.groups[idx]);
+      }
+
+      return { groups };
     }),
 }));
 

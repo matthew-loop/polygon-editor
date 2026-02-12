@@ -10,12 +10,14 @@ import {
   faObjectUngroup,
   faTrash,
   faPen,
+  faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonGroup } from '../../types/polygon';
 import { usePolygonStore } from '../../store/polygonStore';
 import { ColorPickerPopover } from './ColorPickerPopover';
 import { ConfirmModal } from '../ConfirmModal';
-import { useDroppable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface GroupContainerProps {
   group: PolygonGroup;
@@ -47,10 +49,24 @@ export function GroupContainer({ group, featureCount, commonColor, children }: G
   const inputRef = useRef<HTMLInputElement>(null);
   const swatchRef = useRef<HTMLButtonElement>(null);
 
-  const { setNodeRef, isOver } = useDroppable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({
     id: `group-${group.id}`,
     data: { type: 'group', groupId: group.id },
   });
+
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
 
   useEffect(() => {
     if (isRenaming && inputRef.current) {
@@ -97,18 +113,26 @@ export function GroupContainer({ group, featureCount, commonColor, children }: G
   return (
     <div
       ref={setNodeRef}
+      style={{ ...sortableStyle, borderLeftColor: accentColor, borderLeftWidth: 3 }}
       className={`mb-1 rounded-xl border-[1.5px] transition-all duration-200 ${
         isOver
           ? 'border-accent/50 bg-accent/5'
           : 'border-panel-border/50 bg-bg-surface/30'
       }`}
-      style={{ borderLeftColor: accentColor, borderLeftWidth: 3 }}
     >
       {/* Group header */}
       <div
-        className="group flex items-center gap-2 px-2.5 py-2 cursor-pointer select-none"
+        className="group flex items-center gap-1.5 px-1.5 py-2 cursor-pointer select-none"
         onClick={() => toggleGroupCollapsed(group.id)}
       >
+        <div
+          {...attributes}
+          {...listeners}
+          className="w-5 h-6 flex items-center justify-center cursor-grab active:cursor-grabbing text-text-tertiary opacity-0 hover:opacity-60 group-hover:opacity-30 transition-opacity shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FontAwesomeIcon icon={faGripVertical} className="text-[0.55rem]" />
+        </div>
         <button
           className={`w-4 h-4 flex items-center justify-center bg-transparent border-none cursor-pointer rounded transition-all duration-150 text-[0.625rem] shrink-0 ${
             isHidden

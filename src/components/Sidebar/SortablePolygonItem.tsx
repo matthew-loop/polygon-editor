@@ -48,7 +48,7 @@ export function SortablePolygonItem({ feature, hasGroup, onMoveToGroup, onRemove
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center">
+    <div ref={setNodeRef} style={style} className="group/sortable flex items-center">
       <div
         {...attributes}
         {...listeners}
@@ -56,7 +56,7 @@ export function SortablePolygonItem({ feature, hasGroup, onMoveToGroup, onRemove
       >
         <FontAwesomeIcon icon={faGripVertical} className="text-[0.6rem]" />
       </div>
-      <div className="flex-1 min-w-0 group/sortable">
+      <div className="flex-1 min-w-0">
         <PolygonListItem
           feature={feature}
           {...props}
