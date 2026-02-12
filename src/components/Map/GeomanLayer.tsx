@@ -51,6 +51,12 @@ export function GeomanLayer() {
   // Track Leaflet layers by feature ID for diff-based updates
   const layerMapRef = useRef<Map<string, ExtendedPolygon>>(new Map());
 
+  // Track the last-applied geometry JSON per feature to detect external changes during edit
+  const lastAppliedGeometryRef = useRef<Map<string, string>>(new Map());
+
+  // Simplify preview overlay layer
+  const previewLayerRef = useRef<L.Polygon | null>(null);
+
   // Track whether Geoman is actively drawing
   const isDrawingRef = useRef(false);
   // Track whether we're in split-line drawing mode
@@ -67,6 +73,7 @@ export function GeomanLayer() {
   const splittingFeatureId = usePolygonStore((s) => s.splittingFeatureId);
   const mergingFeatureId = usePolygonStore((s) => s.mergingFeatureId);
   const mergeTargetIds = usePolygonStore((s) => s.mergeTargetIds);
+  const simplifyPreview = usePolygonStore((s) => s.simplifyPreview);
   const selectFeature = usePolygonStore((s) => s.selectFeature);
 
   const handleLayerClick = useCallback(
@@ -274,6 +281,7 @@ export function GeomanLayer() {
         layer.pm.disable();
         map.removeLayer(layer);
         layerMap.delete(id);
+        lastAppliedGeometryRef.current.delete(id);
       }
     }
 
@@ -289,9 +297,21 @@ export function GeomanLayer() {
       const existingLayer = layerMap.get(feature.id);
 
       if (existingLayer) {
-        // Only update geometry if NOT being edited — Geoman manages its own geometry
-        if (!existingLayer.pm.enabled()) {
+        // Update geometry — detect external changes even during edit mode
+        const geometryKey = JSON.stringify(feature.geometry.coordinates);
+        const lastKey = lastAppliedGeometryRef.current.get(feature.id);
+
+        if (existingLayer.pm.enabled()) {
+          // Only refresh if geometry actually changed (e.g. simplification applied externally)
+          if (geometryKey !== lastKey) {
+            existingLayer.pm.disable();
+            existingLayer.setLatLngs(toLatLngs(feature.geometry));
+            existingLayer.pm.enable();
+            lastAppliedGeometryRef.current.set(feature.id, geometryKey);
+          }
+        } else {
           existingLayer.setLatLngs(toLatLngs(feature.geometry));
+          lastAppliedGeometryRef.current.set(feature.id, geometryKey);
         }
         if (isMergeInitiator) {
           existingLayer.setStyle({
@@ -382,14 +402,49 @@ export function GeomanLayer() {
 
         polygon.addTo(map);
         layerMap.set(feature.id, polygon);
+        lastAppliedGeometryRef.current.set(
+          feature.id,
+          JSON.stringify(feature.geometry.coordinates)
+        );
       }
     });
     prevShowLabelsRef.current = showLabels;
   }, [features, selectedFeatureId, editingFeatureId, splittingFeatureId, mergingFeatureId, mergeTargetIds, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
 
+  // ── Simplify preview overlay ─────────────────────────────────────
+  useEffect(() => {
+    // Remove old preview
+    if (previewLayerRef.current) {
+      map.removeLayer(previewLayerRef.current);
+      previewLayerRef.current = null;
+    }
+
+    if (simplifyPreview) {
+      const editingColor = getCssVar('--color-editing');
+      const preview = L.polygon(toLatLngs(simplifyPreview.geometry), {
+        color: editingColor,
+        weight: 2.5,
+        dashArray: '6,8',
+        fillColor: editingColor,
+        fillOpacity: 0.08,
+        interactive: false,
+      });
+      preview.addTo(map);
+      previewLayerRef.current = preview;
+    }
+
+    return () => {
+      if (previewLayerRef.current) {
+        map.removeLayer(previewLayerRef.current);
+        previewLayerRef.current = null;
+      }
+    };
+  }, [simplifyPreview, map]);
+
   // ── Cleanup all layers on unmount ────────────────────────────────
   useEffect(() => {
     const layerMap = layerMapRef.current;
+    const lastAppliedGeometry = lastAppliedGeometryRef.current;
     return () => {
       for (const [, layer] of layerMap) {
         layer.off();
@@ -397,6 +452,7 @@ export function GeomanLayer() {
         map.removeLayer(layer);
       }
       layerMap.clear();
+      lastAppliedGeometry.clear();
     };
   }, [map]);
 

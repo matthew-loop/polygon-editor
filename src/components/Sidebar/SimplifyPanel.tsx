@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePolygonStore } from '../../store/polygonStore';
 import { simplifyPolygonGeometry, countPoints } from '../../utils/simplify';
 
@@ -14,6 +14,7 @@ export function SimplifyPanel() {
   const features = usePolygonStore((state) => state.features);
   const selectedFeatureId = usePolygonStore((state) => state.selectedFeatureId);
   const updateFeature = usePolygonStore((state) => state.updateFeature);
+  const setSimplifyPreview = usePolygonStore((state) => state.setSimplifyPreview);
 
   const [sliderValue, setSliderValue] = useState(30);
 
@@ -32,10 +33,27 @@ export function SimplifyPanel() {
     return { simplified: result, simplifiedCount: countPoints(result) };
   }, [selectedFeature, epsilon]);
 
+  // Push simplified geometry to store for map preview overlay
+  useEffect(() => {
+    if (selectedFeature && simplified && simplifiedCount < originalCount) {
+      setSimplifyPreview(selectedFeature.id, simplified);
+    } else if (selectedFeature) {
+      setSimplifyPreview(selectedFeature.id, null);
+    }
+    return () => {
+      // Clear preview on unmount
+      if (selectedFeature) {
+        // Use getState to avoid stale closure
+        usePolygonStore.getState().setSimplifyPreview(selectedFeature.id, null);
+      }
+    };
+  }, [selectedFeature, simplified, simplifiedCount, originalCount, setSimplifyPreview]);
+
   if (!selectedFeature) return null;
 
   const handleApply = () => {
     if (!simplified || simplifiedCount >= originalCount) return;
+    setSimplifyPreview(selectedFeature.id, null);
     updateFeature(selectedFeature.id, { geometry: simplified });
   };
 

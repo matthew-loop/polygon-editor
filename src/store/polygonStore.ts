@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { PolygonFeature } from '../types/polygon';
+import type { Polygon } from 'geojson';
 import { mergePolygons } from '../utils/mergePolygons';
 
 interface PolygonStore {
@@ -16,6 +17,7 @@ interface PolygonStore {
   mergeError: string | null;
   contextMenu: { featureId: string; x: number; y: number } | null;
   focusedFeatureId: string | null;
+  simplifyPreview: { featureId: string; geometry: Polygon } | null;
 
   // Actions
   loadFeatures: (features: PolygonFeature[]) => void;
@@ -46,6 +48,7 @@ interface PolygonStore {
   closeContextMenu: () => void;
   focusFeature: (id: string) => void;
   unfocusAll: () => void;
+  setSimplifyPreview: (featureId: string, geometry: Polygon | null) => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -63,6 +66,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   mergeError: null,
   contextMenu: null,
   focusedFeatureId: null,
+  simplifyPreview: null,
 
   loadFeatures: (features) =>
     set({
@@ -70,6 +74,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       selectedFeatureId: null,
       editingFeatureId: null,
       hasUnsavedChanges: false,
+      simplifyPreview: null,
     }),
 
   appendFeatures: (newFeatures) =>
@@ -110,6 +115,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       mergeError: state.mergingFeatureId === id ? null : state.mergeError,
       contextMenu: null,
       focusedFeatureId: state.focusedFeatureId === id ? null : state.focusedFeatureId,
+      simplifyPreview: state.simplifyPreview?.featureId === id ? null : state.simplifyPreview,
       hasUnsavedChanges: true,
     })),
 
@@ -119,6 +125,11 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       // Stop editing if selecting a different polygon
       editingFeatureId:
         state.editingFeatureId !== id ? null : state.editingFeatureId,
+      // Clear simplify preview when switching features
+      simplifyPreview:
+        state.simplifyPreview && state.simplifyPreview.featureId !== id
+          ? null
+          : state.simplifyPreview,
     })),
 
   editFeature: (id) =>
@@ -147,6 +158,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       mergeError: null,
       contextMenu: null,
       focusedFeatureId: null,
+      simplifyPreview: null,
     }),
 
   setUnsavedChanges: (value) =>
@@ -335,6 +347,11 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
     set({
       focusedFeatureId: null,
       hiddenFeatureIds: new Set(),
+    }),
+
+  setSimplifyPreview: (featureId, geometry) =>
+    set({
+      simplifyPreview: geometry ? { featureId, geometry } : null,
     }),
 }));
 
