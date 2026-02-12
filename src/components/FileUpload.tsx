@@ -1,6 +1,7 @@
 import { useCallback, useState, useRef } from 'react';
 import { parseKmlFile } from '../services/kmlParser';
 import { usePolygonStore } from '../store/polygonStore';
+import type { PolygonFeature } from '../types/polygon';
 
 export function FileUpload() {
   const [isDragging, setIsDragging] = useState(false);
@@ -26,18 +27,26 @@ export function FileUpload() {
       let errorCount = 0;
       let totalFeatures = 0;
 
+      // Parse all files first, then batch store updates so fitBounds
+      // fires once for all features instead of once per file
+      const parsed: { features: PolygonFeature[]; groupName: string }[] = [];
       for (const file of kmlFiles) {
         try {
           const features = await parseKmlFile(file);
           if (features.length > 0) {
             const groupName = file.name.replace(/\.kml$/i, '');
-            appendFeatures(features, groupName);
+            parsed.push({ features, groupName });
             totalFeatures += features.length;
           }
         } catch (err) {
           console.error('Error parsing KML:', file.name, err);
           errorCount++;
         }
+      }
+
+      // Synchronous loop — React 18 batches these into a single re-render
+      for (const { features, groupName } of parsed) {
+        appendFeatures(features, groupName);
       }
 
       if (errorCount > 0) {
