@@ -39,7 +39,8 @@ export function MapBoundsHandler() {
     const geoJsonLayer = L.geoJSON(feature.geometry as unknown as GeoJSON.GeoJsonObject);
     const bounds = geoJsonLayer.getBounds();
     if (bounds.isValid()) {
-      map.flyToBounds(bounds, { paddingTopLeft: [400, 80], paddingBottomRight: [80, 80], maxZoom: 13 });
+      const currentZoom = map.getZoom();
+      map.flyToBounds(bounds, { paddingTopLeft: [400, 80], paddingBottomRight: [80, 80], maxZoom: Math.max(13, currentZoom) });
     }
   }, [selectedFeatureId, editingFeatureId, features, map]);
 
