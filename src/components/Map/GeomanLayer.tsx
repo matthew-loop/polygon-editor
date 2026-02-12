@@ -60,15 +60,22 @@ export function GeomanLayer() {
   const hiddenFeatureIds = usePolygonStore((s) => s.hiddenFeatureIds);
   const showLabels = usePolygonStore((s) => s.showLabels);
   const splittingFeatureId = usePolygonStore((s) => s.splittingFeatureId);
+  const mergingFeatureId = usePolygonStore((s) => s.mergingFeatureId);
+  const mergeTargetIds = usePolygonStore((s) => s.mergeTargetIds);
   const selectFeature = usePolygonStore((s) => s.selectFeature);
 
   const handleLayerClick = useCallback(
     (featureId: string) => {
-      if (!isDrawingRef.current && !isSplittingRef.current) {
-        const { editingFeatureId } = usePolygonStore.getState();
-        if (editingFeatureId && editingFeatureId !== featureId) return;
-        selectFeature(featureId);
+      if (isDrawingRef.current || isSplittingRef.current) return;
+      const state = usePolygonStore.getState();
+      if (state.mergingFeatureId) {
+        if (featureId !== state.mergingFeatureId) {
+          state.toggleMergeTarget(featureId);
+        }
+        return;
       }
+      if (state.editingFeatureId && state.editingFeatureId !== featureId) return;
+      selectFeature(featureId);
     },
     [selectFeature]
   );
@@ -81,8 +88,8 @@ export function GeomanLayer() {
         layerClickedRef.current = false;
         return;
       }
-      const { editingFeatureId, selectedFeatureId, isDrawing, splittingFeatureId } = usePolygonStore.getState();
-      if (!editingFeatureId && selectedFeatureId && !isDrawing && !isDrawingRef.current && !splittingFeatureId) {
+      const { editingFeatureId, selectedFeatureId, isDrawing, splittingFeatureId, mergingFeatureId } = usePolygonStore.getState();
+      if (!editingFeatureId && selectedFeatureId && !isDrawing && !isDrawingRef.current && !splittingFeatureId && !mergingFeatureId) {
         selectFeature(null);
       }
     };
@@ -272,6 +279,8 @@ export function GeomanLayer() {
       const isSelected = feature.id === selectedFeatureId;
       const isEditing = feature.id === editingFeatureId;
       const isSplitting = feature.id === splittingFeatureId;
+      const isMergeInitiator = feature.id === mergingFeatureId;
+      const isMergeTarget = mergeTargetIds.includes(feature.id);
       const existingLayer = layerMap.get(feature.id);
 
       if (existingLayer) {
@@ -279,7 +288,23 @@ export function GeomanLayer() {
         if (!existingLayer.pm.enabled()) {
           existingLayer.setLatLngs(toLatLngs(feature.geometry));
         }
-        if (isSplitting) {
+        if (isMergeInitiator) {
+          existingLayer.setStyle({
+            fillColor: '#3b82f6',
+            fillOpacity: 0.25,
+            color: '#3b82f6',
+            weight: 3,
+            dashArray: undefined,
+          });
+        } else if (isMergeTarget) {
+          existingLayer.setStyle({
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2,
+            color: '#3b82f6',
+            weight: 3,
+            dashArray: '6,6',
+          });
+        } else if (isSplitting) {
           existingLayer.setStyle({
             ...featureStyle(true),
             dashArray: '8,8',
@@ -344,7 +369,7 @@ export function GeomanLayer() {
       }
     });
     prevShowLabelsRef.current = showLabels;
-  }, [features, selectedFeatureId, editingFeatureId, splittingFeatureId, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
+  }, [features, selectedFeatureId, editingFeatureId, splittingFeatureId, mergingFeatureId, mergeTargetIds, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
 
   // ── Cleanup all layers on unmount ────────────────────────────────
   useEffect(() => {

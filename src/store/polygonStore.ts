@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { PolygonFeature } from '../types/polygon';
+import { mergePolygons } from '../utils/mergePolygons';
 
 interface PolygonStore {
   features: PolygonFeature[];
@@ -10,6 +11,9 @@ interface PolygonStore {
   hiddenFeatureIds: Set<string>;
   splittingFeatureId: string | null;
   splitError: string | null;
+  mergingFeatureId: string | null;
+  mergeTargetIds: string[];
+  mergeError: string | null;
 
   // Actions
   loadFeatures: (features: PolygonFeature[]) => void;
@@ -30,6 +34,11 @@ interface PolygonStore {
   stopSplitting: () => void;
   splitFeature: (id: string, resultPolygons: import('geojson').Polygon[]) => void;
   setSplitError: (error: string | null) => void;
+  startMerging: (id: string) => void;
+  stopMerging: () => void;
+  toggleMergeTarget: (id: string) => void;
+  mergeFeatures: () => void;
+  setMergeError: (error: string | null) => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -42,6 +51,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   showLabels: false,
   splittingFeatureId: null,
   splitError: null,
+  mergingFeatureId: null,
+  mergeTargetIds: [],
+  mergeError: null,
 
   loadFeatures: (features) =>
     set({
@@ -81,6 +93,12 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       splittingFeatureId:
         state.splittingFeatureId === id ? null : state.splittingFeatureId,
       splitError: state.splittingFeatureId === id ? null : state.splitError,
+      mergingFeatureId:
+        state.mergingFeatureId === id ? null : state.mergingFeatureId,
+      mergeTargetIds: state.mergingFeatureId === id
+        ? []
+        : state.mergeTargetIds.filter((t) => t !== id),
+      mergeError: state.mergingFeatureId === id ? null : state.mergeError,
       hasUnsavedChanges: true,
     })),
 
@@ -99,6 +117,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       selectedFeatureId: id,
       splittingFeatureId: null,
       splitError: null,
+      mergingFeatureId: null,
+      mergeTargetIds: [],
+      mergeError: null,
     }),
 
   clearAll: () =>
@@ -110,6 +131,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       hiddenFeatureIds: new Set(),
       splittingFeatureId: null,
       splitError: null,
+      mergingFeatureId: null,
+      mergeTargetIds: [],
+      mergeError: null,
     }),
 
   setUnsavedChanges: (value) =>
@@ -123,6 +147,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       editingFeatureId: null,
       splittingFeatureId: null,
       splitError: null,
+      mergingFeatureId: null,
+      mergeTargetIds: [],
+      mergeError: null,
     }),
 
   stopDrawing: () =>
@@ -151,6 +178,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       editingFeatureId: null,
       isDrawing: false,
       splitError: null,
+      mergingFeatureId: null,
+      mergeTargetIds: [],
+      mergeError: null,
     }),
 
   stopSplitting: () =>
@@ -189,4 +219,80 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
 
   setSplitError: (error) =>
     set({ splitError: error }),
+
+  startMerging: (id) =>
+    set({
+      mergingFeatureId: id,
+      mergeTargetIds: [],
+      mergeError: null,
+      selectedFeatureId: id,
+      editingFeatureId: null,
+      isDrawing: false,
+      splittingFeatureId: null,
+      splitError: null,
+    }),
+
+  stopMerging: () =>
+    set({
+      mergingFeatureId: null,
+      mergeTargetIds: [],
+      mergeError: null,
+    }),
+
+  toggleMergeTarget: (id) =>
+    set((state) => {
+      if (id === state.mergingFeatureId) return state;
+      const targets = state.mergeTargetIds.includes(id)
+        ? state.mergeTargetIds.filter((t) => t !== id)
+        : [...state.mergeTargetIds, id];
+      return { mergeTargetIds: targets, mergeError: null };
+    }),
+
+  mergeFeatures: () =>
+    set((state) => {
+      if (!state.mergingFeatureId || state.mergeTargetIds.length === 0) return state;
+
+      const initiator = state.features.find((f) => f.id === state.mergingFeatureId);
+      if (!initiator) return state;
+
+      const allIds = [state.mergingFeatureId, ...state.mergeTargetIds];
+      const polygons = allIds
+        .map((id) => state.features.find((f) => f.id === id))
+        .filter((f): f is PolygonFeature => !!f)
+        .map((f) => f.geometry);
+
+      const result = mergePolygons(polygons);
+      if (!result.success) {
+        return { mergeError: result.error };
+      }
+
+      // Insert merged polygon at initiator's position, remove all source polygons
+      const initiatorIdx = state.features.findIndex((f) => f.id === state.mergingFeatureId);
+      const mergedFeature: PolygonFeature = {
+        id: crypto.randomUUID(),
+        name: initiator.name,
+        geometry: result.geometry,
+        properties: { ...initiator.properties },
+      };
+
+      const sourceIds = new Set(allIds);
+      const features = [...state.features];
+      // Remove all source features
+      const filtered = features.filter((f) => !sourceIds.has(f.id));
+      // Insert merged at the initiator's original position
+      const insertIdx = Math.min(initiatorIdx, filtered.length);
+      filtered.splice(insertIdx, 0, mergedFeature);
+
+      return {
+        features: filtered,
+        selectedFeatureId: mergedFeature.id,
+        mergingFeatureId: null,
+        mergeTargetIds: [],
+        mergeError: null,
+        hasUnsavedChanges: true,
+      };
+    }),
+
+  setMergeError: (error) =>
+    set({ mergeError: error }),
 }));

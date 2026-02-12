@@ -26,6 +26,13 @@ export function Sidebar() {
   const splitError = usePolygonStore((state) => state.splitError);
   const startSplitting = usePolygonStore((state) => state.startSplitting);
   const stopSplitting = usePolygonStore((state) => state.stopSplitting);
+  const mergingFeatureId = usePolygonStore((state) => state.mergingFeatureId);
+  const mergeTargetIds = usePolygonStore((state) => state.mergeTargetIds);
+  const mergeError = usePolygonStore((state) => state.mergeError);
+  const startMerging = usePolygonStore((state) => state.startMerging);
+  const stopMerging = usePolygonStore((state) => state.stopMerging);
+  const toggleMergeTarget = usePolygonStore((state) => state.toggleMergeTarget);
+  const mergeFeatures = usePolygonStore((state) => state.mergeFeatures);
 
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -120,11 +127,11 @@ export function Sidebar() {
         </div>
         <button
           onClick={isDrawing ? stopDrawing : startDrawing}
-          disabled={!!splittingFeatureId}
+          disabled={!!splittingFeatureId || !!mergingFeatureId}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border ${
             isDrawing
               ? 'bg-accent text-white border-accent'
-              : splittingFeatureId
+              : splittingFeatureId || mergingFeatureId
                 ? 'bg-accent-dim text-accent/40 border-transparent cursor-not-allowed'
                 : 'bg-accent-dim text-accent border-transparent hover:bg-accent/20'
           }`}
@@ -162,10 +169,49 @@ export function Sidebar() {
         </div>
       )}
 
+      {/* ── Merge Mode Banner ── */}
+      {mergingFeatureId && (
+        <div className="mx-3 mb-1 px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 shrink-0">
+          <div className="flex items-center gap-2 text-[0.8125rem] font-medium text-blue-600 dark:text-blue-400">
+            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 512 512" fill="currentColor">
+              <path d="M32 32C14.3 32 0 46.3 0 64v64c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32H32zm192 0c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32H224zM0 256c0-17.7 14.3-32 32-32h64c17.7 0 32 14.3 32 32v64c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V256zm224-32c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V256c0-17.7-14.3-32-32-32H224z" />
+            </svg>
+            Click polygons to merge with "{features.find((f) => f.id === mergingFeatureId)?.name}"
+          </div>
+          {mergeTargetIds.length > 0 && (
+            <p className="mt-1 text-[0.75rem] text-blue-500/70">
+              {mergeTargetIds.length} polygon{mergeTargetIds.length !== 1 ? 's' : ''} selected
+            </p>
+          )}
+          {mergeError && (
+            <p className="mt-1.5 text-[0.75rem] text-red-500">{mergeError}</p>
+          )}
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={mergeFeatures}
+              disabled={mergeTargetIds.length === 0}
+              className={`flex-1 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border ${
+                mergeTargetIds.length > 0
+                  ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+                  : 'bg-blue-500/10 text-blue-400/40 border-blue-500/20 cursor-not-allowed'
+              }`}
+            >
+              Merge ({mergeTargetIds.length})
+            </button>
+            <button
+              onClick={stopMerging}
+              className="flex-1 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Polygon List ── */}
       <div
         className="flex-1 overflow-y-auto px-3 py-1 min-h-[80px]"
-        onClick={() => { if (!editingFeatureId && !splittingFeatureId && selectedFeatureId) selectFeature(null); }}
+        onClick={() => { if (!editingFeatureId && !splittingFeatureId && !mergingFeatureId && selectedFeatureId) selectFeature(null); }}
       >
         {features.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center gap-3">
@@ -198,7 +244,12 @@ export function Sidebar() {
               isSelected={feature.id === selectedFeatureId}
               isEditing={feature.id === editingFeatureId}
               isHidden={hiddenFeatureIds.has(feature.id)}
+              isMergeTarget={mergingFeatureId === feature.id || mergeTargetIds.includes(feature.id)}
               onSelect={() => {
+                if (mergingFeatureId) {
+                  if (feature.id !== mergingFeatureId) toggleMergeTarget(feature.id);
+                  return;
+                }
                 if (splittingFeatureId) return;
                 if (editingFeatureId && editingFeatureId !== feature.id) return;
                 selectFeature(
@@ -210,6 +261,7 @@ export function Sidebar() {
               }
               onDelete={() => deleteFeature(feature.id)}
               onSplit={() => startSplitting(feature.id)}
+              onMerge={() => startMerging(feature.id)}
               onNameChange={(newName) => handleNameChange(feature.id, newName)}
               onToggleVisibility={() => toggleFeatureVisibility(feature.id)}
               index={index}

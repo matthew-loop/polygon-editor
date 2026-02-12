@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonFeature } from '../../types/polygon';
 import { ConfirmModal } from '../ConfirmModal';
 
@@ -9,10 +9,12 @@ interface PolygonListItemProps {
   isSelected: boolean;
   isEditing: boolean;
   isHidden: boolean;
+  isMergeTarget?: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onSplit: () => void;
+  onMerge: () => void;
   onNameChange: (newName: string) => void;
   onToggleVisibility: () => void;
   index: number;
@@ -23,10 +25,12 @@ export function PolygonListItem({
   isSelected,
   isEditing,
   isHidden,
+  isMergeTarget,
   onSelect,
   onEdit,
   onDelete,
   onSplit,
+  onMerge,
   onNameChange,
   onToggleVisibility,
   index,
@@ -102,6 +106,11 @@ export function PolygonListItem({
     onSplit();
   };
 
+  const handleMergeClick = () => {
+    setShowMenu(false);
+    onMerge();
+  };
+
   const handleVisibilityClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleVisibility();
@@ -119,11 +128,13 @@ export function PolygonListItem({
       className={`group flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-xl cursor-pointer transition-all duration-200 border-[1.5px] border-transparent animate-item-fade-in ${
         showMenu ? 'relative z-[60]' : ''
       } ${
-        isEditing
-          ? 'border-editing/40 bg-editing-dim'
-          : isSelected
-            ? 'border-accent/20 bg-accent-dim shadow-accent-glow'
-            : 'hover:bg-bg-hover'
+        isMergeTarget
+          ? 'border-blue-500/40 bg-blue-500/10'
+          : isEditing
+            ? 'border-editing/40 bg-editing-dim'
+            : isSelected
+              ? 'border-accent/20 bg-accent-dim shadow-accent-glow'
+              : 'hover:bg-bg-hover'
       }`}
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
       onDoubleClick={handleDoubleClick}
@@ -208,6 +219,13 @@ export function PolygonListItem({
                 >
                   <FontAwesomeIcon icon={faScissors} className="text-text-tertiary text-[0.6875rem] w-3.5" />
                   Split
+                </button>
+                <button
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                  onClick={(e) => { e.stopPropagation(); handleMergeClick(); }}
+                >
+                  <FontAwesomeIcon icon={faObjectGroup} className="text-text-tertiary text-[0.6875rem] w-3.5" />
+                  Merge
                 </button>
                 <button
                   className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-danger text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-danger-dim text-left"
