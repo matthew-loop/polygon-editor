@@ -46,13 +46,7 @@ export function Sidebar() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleNameChange = (id: string, newName: string) => {
-    updateFeature(id, {
-      name: newName,
-      properties: {
-        ...features.find((f) => f.id === id)!.properties,
-        name: newName,
-      },
-    });
+    updateFeature(id, { name: newName });
   };
 
   const handleClear = () => {

@@ -182,7 +182,6 @@ export function GeomanLayer() {
         name: 'New Polygon',
         geometry: geoJson.geometry as Polygon,
         properties: {
-          name: 'New Polygon',
           style: { ...DEFAULT_STYLE },
         },
       };
@@ -266,6 +265,7 @@ export function GeomanLayer() {
     // 1. Remove layers for features that no longer exist or are hidden
     for (const [id, layer] of layerMap) {
       if (!currentIds.has(id) || hiddenFeatureIds.has(id)) {
+        layer.off();
         layer.pm.disable();
         map.removeLayer(layer);
         layerMap.delete(id);
@@ -387,6 +387,7 @@ export function GeomanLayer() {
     const layerMap = layerMapRef.current;
     return () => {
       for (const [, layer] of layerMap) {
+        layer.off();
         layer.pm.disable();
         map.removeLayer(layer);
       }

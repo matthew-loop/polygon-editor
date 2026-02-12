@@ -219,10 +219,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
         id: crypto.randomUUID(),
         name: `${original.name} (${i + 1})`,
         geometry,
-        properties: {
-          ...original.properties,
-          name: `${original.name} (${i + 1})`,
-        },
+        properties: { ...original.properties },
       }));
 
       const features = [...state.features];

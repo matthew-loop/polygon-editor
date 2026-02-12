@@ -10,7 +10,7 @@ export function exportToGeoJson(features: PolygonFeature[], filename: string = '
       type: 'Feature',
       geometry: f.geometry,
       properties: {
-        name: f.properties.name,
+        name: f.name,
         description: f.properties.description,
         fill: f.properties.style.fillColor,
         'fill-opacity': f.properties.style.fillOpacity,
@@ -31,7 +31,7 @@ export function exportToKml(features: PolygonFeature[], filename: string = 'poly
       type: 'Feature',
       geometry: f.geometry,
       properties: {
-        name: f.properties.name,
+        name: f.name,
         description: f.properties.description || '',
       },
     })),

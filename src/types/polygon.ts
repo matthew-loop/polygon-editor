@@ -12,7 +12,6 @@ export interface PolygonFeature {
   name: string;
   geometry: Polygon;
   properties: {
-    name: string;
     description?: string;
     style: PolygonStyle;
   };

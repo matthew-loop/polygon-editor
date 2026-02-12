@@ -28,6 +28,7 @@ function flattenFeature(feature: Feature<Polygon | MultiPolygon>): Feature<Polyg
     },
     properties: {
       ...feature.properties,
+      // Suffix name for split MultiPolygon parts (used below when extracting name)
       name: feature.properties?.name
         ? `${feature.properties.name} (${index + 1})`
         : `Polygon ${index + 1}`,
@@ -59,7 +60,6 @@ export async function parseKmlFile(file: File): Promise<PolygonFeature[]> {
         name,
         geometry: f.geometry,
         properties: {
-          name,
           description: f.properties?.description as string | undefined,
           style,
         },
