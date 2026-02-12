@@ -39,6 +39,8 @@ export function MapContextMenu() {
   const updateFeature = usePolygonStore((s) => s.updateFeature);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const showDeleteConfirmRef = useRef(false);
+  useEffect(() => { showDeleteConfirmRef.current = showDeleteConfirm; }, [showDeleteConfirm]);
   const [colorPicker, setColorPicker] = useState<{ x: number; y: number; featureId: string } | null>(null);
 
   const activeFeatureId = contextMenu?.featureId ?? colorPicker?.featureId;
@@ -65,6 +67,7 @@ export function MapContextMenu() {
   // Close on click outside
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
+      if (showDeleteConfirmRef.current) return;
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         closeContextMenu();
       }
@@ -75,7 +78,7 @@ export function MapContextMenu() {
   // Close on Escape
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeContextMenu();
+      if (e.key === 'Escape' && !showDeleteConfirmRef.current) closeContextMenu();
     },
     [closeContextMenu]
   );
