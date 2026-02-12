@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { usePolygonStore } from '../../store/polygonStore';
 import { useThemeStore } from '../../store/themeStore';
 import { PolygonListItem } from './PolygonListItem';
@@ -22,6 +24,7 @@ export function Sidebar() {
   const stopDrawing = usePolygonStore((state) => state.stopDrawing);
   const hiddenFeatureIds = usePolygonStore((state) => state.hiddenFeatureIds);
   const toggleFeatureVisibility = usePolygonStore((state) => state.toggleFeatureVisibility);
+  const setAllFeaturesVisibility = usePolygonStore((state) => state.setAllFeaturesVisibility);
   const splittingFeatureId = usePolygonStore((state) => state.splittingFeatureId);
   const splitError = usePolygonStore((state) => state.splitError);
   const startSplitting = usePolygonStore((state) => state.startSplitting);
@@ -126,6 +129,21 @@ export function Sidebar() {
             <span className="text-[0.625rem] font-bold text-accent bg-accent-dim px-2.5 py-0.5 rounded-full tabular-nums tracking-wide">
               {features.length}
             </span>
+          )}
+          {features.length > 0 && (
+            <button
+              onClick={() => {
+                const anyVisible = hiddenFeatureIds.size < features.length;
+                setAllFeaturesVisibility(!anyVisible);
+              }}
+              className="w-6 h-6 flex items-center justify-center rounded-md text-text-tertiary cursor-pointer transition-all duration-200 hover:text-text-secondary hover:bg-bg-hover"
+              title={hiddenFeatureIds.size < features.length ? 'Hide all layers' : 'Show all layers'}
+            >
+              <FontAwesomeIcon
+                icon={hiddenFeatureIds.size < features.length ? faEye : faEyeSlash}
+                className="w-3 h-3"
+              />
+            </button>
           )}
         </div>
         <button

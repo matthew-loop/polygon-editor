@@ -30,6 +30,7 @@ interface PolygonStore {
   startDrawing: () => void;
   stopDrawing: () => void;
   toggleFeatureVisibility: (id: string) => void;
+  setAllFeaturesVisibility: (visible: boolean) => void;
   showLabels: boolean;
   toggleLabels: () => void;
   startSplitting: (id: string) => void;
@@ -182,6 +183,13 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       }
       return { hiddenFeatureIds: next };
     }),
+
+  setAllFeaturesVisibility: (visible) =>
+    set((state) => ({
+      hiddenFeatureIds: visible
+        ? new Set<string>()
+        : new Set(state.features.map((f) => f.id)),
+    })),
 
   startSplitting: (id) =>
     set({
