@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Test Polygons</name>
+    <!-- Rectangle A: center ~(10, 10), spans 9.5-10.5 lat, 9.5-10.5 lng -->
+    <Placemark>
+      <name>Rectangle A</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              9.5,9.5,0
+              10.5,9.5,0
+              10.5,10.5,0
+              9.5,10.5,0
+              9.5,9.5,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <!-- Triangle B: overlaps Rectangle A's east edge for merge tests -->
+    <Placemark>
+      <name>Triangle B</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              10.3,9.5,0
+              12.3,10.0,0
+              10.3,10.5,0
+              10.3,9.5,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <!-- Complex C: 23 vertices for simplification tests -->
+    <Placemark>
+      <name>Complex C</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              15.0,9.5,0
+              15.1,9.52,0
+              15.2,9.48,0
+              15.3,9.51,0
+              15.4,9.5,0
+              15.5,9.53,0
+              15.6,9.49,0
+              15.7,9.5,0
+              15.8,9.52,0
+              15.9,9.48,0
+              16.0,9.5,0
+              16.1,9.6,0
+              16.2,9.7,0
+              16.2,9.8,0
+              16.1,9.9,0
+              16.0,10.0,0
+              15.8,9.98,0
+              15.6,10.02,0
+              15.4,9.99,0
+              15.2,10.01,0
+              15.0,10.0,0
+              15.0,9.8,0
+              15.0,9.5,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

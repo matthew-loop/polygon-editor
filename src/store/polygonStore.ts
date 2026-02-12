@@ -337,3 +337,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       hiddenFeatureIds: new Set(),
     }),
 }));
+
+if (import.meta.env.DEV || import.meta.env.VITE_E2E) {
+  (window as any).__polygonStore = usePolygonStore;
+}

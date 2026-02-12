@@ -43,6 +43,11 @@ function toLatLngs(geometry: Polygon): L.LatLng[][] {
 export function GeomanLayer() {
   const map = useMap();
 
+  // Expose map instance for E2E tests
+  if (import.meta.env.DEV || import.meta.env.VITE_E2E) {
+    (window as any).__leafletMap = map;
+  }
+
   // Track Leaflet layers by feature ID for diff-based updates
   const layerMapRef = useRef<Map<string, ExtendedPolygon>>(new Map());
 

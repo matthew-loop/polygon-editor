@@ -26,3 +26,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
       return { theme: next };
     }),
 }));
+
+if (import.meta.env.DEV || import.meta.env.VITE_E2E) {
+  (window as any).__themeStore = useThemeStore;
+}
