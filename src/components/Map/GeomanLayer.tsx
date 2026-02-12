@@ -69,6 +69,7 @@ export function GeomanLayer() {
   const selectedFeatureId = usePolygonStore((s) => s.selectedFeatureId);
   const editingFeatureId = usePolygonStore((s) => s.editingFeatureId);
   const hiddenFeatureIds = usePolygonStore((s) => s.hiddenFeatureIds);
+  const hiddenGroupIds = usePolygonStore((s) => s.hiddenGroupIds);
   const showLabels = usePolygonStore((s) => s.showLabels);
   const splittingFeatureId = usePolygonStore((s) => s.splittingFeatureId);
   const mergingFeatureId = usePolygonStore((s) => s.mergingFeatureId);
@@ -272,11 +273,11 @@ export function GeomanLayer() {
   // ── Diff-based layer sync ────────────────────────────────────────
   useEffect(() => {
     const layerMap = layerMapRef.current;
-    const currentIds = new Set(features.map((f) => f.id));
-
     // 1. Remove layers for features that no longer exist or are hidden
+    const featureById = new Map(features.map((f) => [f.id, f]));
     for (const [id, layer] of layerMap) {
-      if (!currentIds.has(id) || hiddenFeatureIds.has(id)) {
+      const f = featureById.get(id);
+      if (!f || hiddenFeatureIds.has(id) || (f.groupId && hiddenGroupIds.has(f.groupId))) {
         layer.off();
         layer.pm.disable();
         map.removeLayer(layer);
@@ -287,7 +288,7 @@ export function GeomanLayer() {
 
     // 2. Add or update layers for each visible feature
     features.forEach((feature) => {
-      if (hiddenFeatureIds.has(feature.id)) return;
+      if (hiddenFeatureIds.has(feature.id) || (feature.groupId && hiddenGroupIds.has(feature.groupId))) return;
 
       const isSelected = feature.id === selectedFeatureId;
       const isEditing = feature.id === editingFeatureId;
@@ -409,7 +410,7 @@ export function GeomanLayer() {
       }
     });
     prevShowLabelsRef.current = showLabels;
-  }, [features, selectedFeatureId, editingFeatureId, splittingFeatureId, mergingFeatureId, mergeTargetIds, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
+  }, [features, selectedFeatureId, editingFeatureId, splittingFeatureId, mergingFeatureId, mergeTargetIds, hiddenFeatureIds, hiddenGroupIds, showLabels, map, handleLayerClick, theme]);
 
   // ── Simplify preview overlay ─────────────────────────────────────
   useEffect(() => {

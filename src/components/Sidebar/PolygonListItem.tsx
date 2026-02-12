@@ -1,9 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup, faCrosshairs, faExpand, faPalette } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup, faCrosshairs, faExpand, faPalette, faFolderOpen, faArrowRightFromBracket, faFolderPlus } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonFeature } from '../../types/polygon';
+import { usePolygonStore } from '../../store/polygonStore';
 import { ConfirmModal } from '../ConfirmModal';
 import { ColorPickerPopover } from './ColorPickerPopover';
+
+interface GroupActions {
+  hasGroup: boolean;
+  onMoveToGroup: (groupId: string) => void;
+  onRemoveFromGroup: () => void;
+  onMoveToNewGroup: () => void;
+}
 
 interface PolygonListItemProps {
   feature: PolygonFeature;
@@ -21,6 +30,7 @@ interface PolygonListItemProps {
   onNameChange: (newName: string) => void;
   onColorChange: (color: string) => void;
   onToggleVisibility: () => void;
+  groupActions?: GroupActions;
   index: number;
 }
 
@@ -40,8 +50,23 @@ export function PolygonListItem({
   onNameChange,
   onColorChange,
   onToggleVisibility,
+  groupActions,
   index,
 }: PolygonListItemProps) {
+  const groups = usePolygonStore((s) => s.groups);
+  const [showGroupSubmenu, setShowGroupSubmenu] = useState(false);
+  const [groupSubmenuPos, setGroupSubmenuPos] = useState<{ top: number; left: number } | null>(null);
+  const groupSubmenuTriggerRef = useRef<HTMLDivElement>(null);
+  const groupSubmenuPortalRef = useRef<HTMLDivElement>(null);
+  const submenuCloseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const openGroupSubmenu = () => {
+    clearTimeout(submenuCloseTimer.current);
+    setShowGroupSubmenu(true);
+  };
+  const scheduleCloseGroupSubmenu = () => {
+    submenuCloseTimer.current = setTimeout(() => setShowGroupSubmenu(false), 120);
+  };
   const [isRenamingName, setIsRenamingName] = useState(false);
   const [editedName, setEditedName] = useState(feature.name);
   const [showMenu, setShowMenu] = useState(false);
@@ -63,17 +88,30 @@ export function PolygonListItem({
     }
   }, [isSelected]);
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside (check portal too)
   useEffect(() => {
     if (!showMenu) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target) &&
+          (!groupSubmenuPortalRef.current || !groupSubmenuPortalRef.current.contains(target))) {
         setShowMenu(false);
+        setShowGroupSubmenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
+
+  // Position the group submenu portal relative to its trigger
+  useEffect(() => {
+    if (showGroupSubmenu && groupSubmenuTriggerRef.current) {
+      const rect = groupSubmenuTriggerRef.current.getBoundingClientRect();
+      setGroupSubmenuPos({ top: rect.top, left: rect.right + 4 });
+    } else {
+      setGroupSubmenuPos(null);
+    }
+  }, [showGroupSubmenu]);
 
   const handleDoubleClick = () => {
     setIsRenamingName(true);
@@ -138,7 +176,10 @@ export function PolygonListItem({
   const handleMenuClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect();
-    setShowMenu((prev) => !prev);
+    setShowMenu((prev) => {
+      if (prev) setShowGroupSubmenu(false);
+      return !prev;
+    });
   };
 
   return (
@@ -267,6 +308,66 @@ export function PolygonListItem({
                   <FontAwesomeIcon icon={faObjectGroup} className="text-text-tertiary text-[0.6875rem] w-3.5" />
                   Merge
                 </button>
+                {groupActions && (
+                  <>
+                    <div className="h-px bg-divider mx-2.5 my-1" />
+                    <div
+                      ref={groupSubmenuTriggerRef}
+                      onMouseEnter={openGroupSubmenu}
+                      onMouseLeave={scheduleCloseGroupSubmenu}
+                    >
+                      <button
+                        className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                        onClick={(e) => { e.stopPropagation(); setShowGroupSubmenu((p) => !p); }}
+                      >
+                        <FontAwesomeIcon icon={faFolderOpen} className="text-text-tertiary text-[0.6875rem] w-3.5" />
+                        Move to group
+                        <svg className="w-3 h-3 ml-auto text-text-tertiary -rotate-90" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <path d="M4 6l4 4 4-4" />
+                        </svg>
+                      </button>
+                      {showGroupSubmenu && groupSubmenuPos && createPortal(
+                        <div
+                          ref={groupSubmenuPortalRef}
+                          className="fixed w-[150px] py-1 rounded-xl glass-panel shadow-lg border border-panel-border z-[10000]"
+                          style={{ top: groupSubmenuPos.top, left: groupSubmenuPos.left }}
+                          onMouseEnter={openGroupSubmenu}
+                          onMouseLeave={scheduleCloseGroupSubmenu}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-accent text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                            onClick={(e) => { e.stopPropagation(); setShowMenu(false); setShowGroupSubmenu(false); groupActions.onMoveToNewGroup(); }}
+                          >
+                            <FontAwesomeIcon icon={faFolderPlus} className="text-[0.6875rem] w-3.5" />
+                            New group
+                          </button>
+                          {groups.filter((g) => g.id !== feature.groupId).length > 0 && <div className="h-px bg-divider mx-2.5 my-1" />}
+                          {groups.filter((g) => g.id !== feature.groupId).map((g) => (
+                            <button
+                              key={g.id}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left truncate"
+                              onClick={(e) => { e.stopPropagation(); setShowMenu(false); setShowGroupSubmenu(false); groupActions.onMoveToGroup(g.id); }}
+                            >
+                              {g.name}
+                            </button>
+                          ))}
+                        </div>,
+                        document.body
+                      )}
+                    </div>
+                    {groupActions.hasGroup && (
+                      <button
+                        className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                        onClick={(e) => { e.stopPropagation(); setShowMenu(false); groupActions.onRemoveFromGroup(); }}
+                      >
+                        <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-text-tertiary text-[0.6875rem] w-3.5" />
+                        Remove from group
+                      </button>
+                    )}
+                  </>
+                )}
                 <button
                   className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-danger text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-danger-dim text-left"
                   onClick={(e) => { e.stopPropagation(); handleDeleteClick(); }}

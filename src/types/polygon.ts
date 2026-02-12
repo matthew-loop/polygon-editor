@@ -11,10 +11,16 @@ export interface PolygonFeature {
   id: string;
   name: string;
   geometry: Polygon;
+  groupId?: string;
   properties: {
     description?: string;
     style: PolygonStyle;
   };
+}
+
+export interface PolygonGroup {
+  id: string;
+  name: string;
 }
 
 export const DEFAULT_STYLE: PolygonStyle = {

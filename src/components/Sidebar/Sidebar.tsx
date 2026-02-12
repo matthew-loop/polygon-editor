@@ -1,13 +1,32 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faFolderPlus } from '@fortawesome/free-solid-svg-icons';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { usePolygonStore } from '../../store/polygonStore';
 import { useThemeStore } from '../../store/themeStore';
-import { PolygonListItem } from './PolygonListItem';
+import { SortablePolygonItem } from './SortablePolygonItem';
+import { GroupContainer } from './GroupContainer';
+import { DndWrapper } from './DndWrapper';
 import { SimplifyPanel } from './SimplifyPanel';
 import { FileUpload } from '../FileUpload';
 import { ExportPanel } from '../ExportPanel';
 import { ConfirmModal } from '../ConfirmModal';
+
+function UngroupedDropZone({ children }: { children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'ungrouped-zone',
+    data: { type: 'ungrouped-zone' },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[4px] rounded-lg transition-all duration-200 ${isOver ? 'bg-accent/10 ring-1 ring-accent/30' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function Sidebar() {
   const features = usePolygonStore((state) => state.features);
@@ -40,6 +59,11 @@ export function Sidebar() {
   const focusFeature = usePolygonStore((state) => state.focusFeature);
   const unfocusAll = usePolygonStore((state) => state.unfocusAll);
 
+  const groups = usePolygonStore((state) => state.groups);
+  const createGroup = usePolygonStore((state) => state.createGroup);
+  const addToGroup = usePolygonStore((state) => state.addToGroup);
+  const removeFromGroup = usePolygonStore((state) => state.removeFromGroup);
+
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
@@ -67,6 +91,61 @@ export function Sidebar() {
     }
     clearAll();
   };
+
+  const ungroupedFeatures = useMemo(
+    () => features.filter((f) => !f.groupId),
+    [features]
+  );
+
+  const groupedFeaturesMap = useMemo(() => {
+    const map = new Map<string, typeof features>();
+    for (const f of features) {
+      if (f.groupId) {
+        const arr = map.get(f.groupId) || [];
+        arr.push(f);
+        map.set(f.groupId, arr);
+      }
+    }
+    return map;
+  }, [features]);
+
+  const allFeatureIds = useMemo(
+    () => features.map((f) => f.id),
+    [features]
+  );
+
+  const makeItemProps = (feature: typeof features[0], index: number) => ({
+    feature,
+    isSelected: feature.id === selectedFeatureId,
+    isEditing: feature.id === editingFeatureId,
+    isHidden: hiddenFeatureIds.has(feature.id),
+    isMergeTarget: mergingFeatureId === feature.id || mergeTargetIds.includes(feature.id),
+    isFocused: focusedFeatureId === feature.id,
+    hasGroup: !!feature.groupId,
+    onSelect: () => {
+      if (mergingFeatureId) {
+        if (feature.id !== mergingFeatureId) toggleMergeTarget(feature.id);
+        return;
+      }
+      if (splittingFeatureId) return;
+      if (editingFeatureId && editingFeatureId !== feature.id) return;
+      selectFeature(
+        !editingFeatureId && feature.id === selectedFeatureId ? null : feature.id
+      );
+    },
+    onEdit: () => editFeature(editingFeatureId === feature.id ? null : feature.id),
+    onDelete: () => deleteFeature(feature.id),
+    onSplit: () => startSplitting(feature.id),
+    onMerge: () => startMerging(feature.id),
+    onFocus: () => focusedFeatureId === feature.id ? unfocusAll() : focusFeature(feature.id),
+    onColorChange: (color: string) => handleColorChange(feature.id, color),
+    onNameChange: (newName: string) => handleNameChange(feature.id, newName),
+    onToggleVisibility: () => toggleFeatureVisibility(feature.id),
+    onMoveToGroup: (groupId: string) => addToGroup([feature.id], groupId),
+    onRemoveFromGroup: () => removeFromGroup([feature.id]),
+    onMoveToNewGroup: () => createGroup('New Group', [feature.id]),
+    index,
+  });
 
   return (
     <aside className="absolute top-4 left-4 bottom-4 w-[340px] z-[1000] flex flex-col glass-panel rounded-[18px] overflow-hidden animate-panel-slide-in">
@@ -151,27 +230,39 @@ export function Sidebar() {
             </button>
           )}
         </div>
-        <button
-          onClick={isDrawing ? stopDrawing : startDrawing}
-          disabled={!!splittingFeatureId || !!mergingFeatureId}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border ${
-            isDrawing
-              ? 'bg-accent text-white border-accent'
-              : splittingFeatureId || mergingFeatureId
-                ? 'bg-accent-dim text-accent/40 border-transparent cursor-not-allowed'
-                : 'bg-accent-dim text-accent border-transparent hover:bg-accent/20'
-          }`}
-          title={isDrawing ? 'Cancel drawing' : 'Draw new polygon'}
-        >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            {isDrawing ? (
-              <path d="M4 4L12 12M12 4L4 12" />
-            ) : (
-              <path d="M8 3V13M3 8H13" />
-            )}
-          </svg>
-          {isDrawing ? 'Cancel' : 'Draw'}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {features.length > 0 && (
+            <button
+              onClick={() => createGroup('New Group')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border bg-bg-hover/50 text-text-secondary border-transparent hover:bg-bg-hover hover:text-text-primary"
+              title="Create new group"
+            >
+              <FontAwesomeIcon icon={faFolderPlus} className="text-[0.625rem]" />
+              Group
+            </button>
+          )}
+          <button
+            onClick={isDrawing ? stopDrawing : startDrawing}
+            disabled={!!splittingFeatureId || !!mergingFeatureId}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border ${
+              isDrawing
+                ? 'bg-accent text-white border-accent'
+                : splittingFeatureId || mergingFeatureId
+                  ? 'bg-accent-dim text-accent/40 border-transparent cursor-not-allowed'
+                  : 'bg-accent-dim text-accent border-transparent hover:bg-accent/20'
+            }`}
+            title={isDrawing ? 'Cancel drawing' : 'Draw new polygon'}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              {isDrawing ? (
+                <path d="M4 4L12 12M12 4L4 12" />
+              ) : (
+                <path d="M8 3V13M3 8H13" />
+              )}
+            </svg>
+            {isDrawing ? 'Cancel' : 'Draw'}
+          </button>
+        </div>
       </div>
 
       {/* ── Split Mode Banner ── */}
@@ -263,39 +354,41 @@ export function Sidebar() {
             </p>
           </div>
         ) : (
-          features.map((feature, index) => (
-            <PolygonListItem
-              key={feature.id}
-              feature={feature}
-              isSelected={feature.id === selectedFeatureId}
-              isEditing={feature.id === editingFeatureId}
-              isHidden={hiddenFeatureIds.has(feature.id)}
-              isMergeTarget={mergingFeatureId === feature.id || mergeTargetIds.includes(feature.id)}
-              onSelect={() => {
-                if (mergingFeatureId) {
-                  if (feature.id !== mergingFeatureId) toggleMergeTarget(feature.id);
-                  return;
-                }
-                if (splittingFeatureId) return;
-                if (editingFeatureId && editingFeatureId !== feature.id) return;
-                selectFeature(
-                  !editingFeatureId && feature.id === selectedFeatureId ? null : feature.id
+          <DndWrapper>
+            <SortableContext items={allFeatureIds} strategy={verticalListSortingStrategy}>
+              {/* Ungrouped polygons */}
+              <UngroupedDropZone>
+                {ungroupedFeatures.map((feature, index) => (
+                  <SortablePolygonItem
+                    key={feature.id}
+                    {...makeItemProps(feature, index)}
+                  />
+                ))}
+              </UngroupedDropZone>
+
+              {/* Groups */}
+              {groups.map((group) => {
+                const groupFeatures = groupedFeaturesMap.get(group.id) || [];
+                const colors = new Set(groupFeatures.map((f) => f.properties.style.fillColor));
+                const commonColor = colors.size === 1 ? [...colors][0] : null;
+                return (
+                  <GroupContainer
+                    key={group.id}
+                    group={group}
+                    featureCount={groupFeatures.length}
+                    commonColor={commonColor}
+                  >
+                    {groupFeatures.map((feature, index) => (
+                      <SortablePolygonItem
+                        key={feature.id}
+                        {...makeItemProps(feature, ungroupedFeatures.length + index)}
+                      />
+                    ))}
+                  </GroupContainer>
                 );
-              }}
-              onEdit={() =>
-                editFeature(editingFeatureId === feature.id ? null : feature.id)
-              }
-              onDelete={() => deleteFeature(feature.id)}
-              onSplit={() => startSplitting(feature.id)}
-              onMerge={() => startMerging(feature.id)}
-              isFocused={focusedFeatureId === feature.id}
-              onFocus={() => focusedFeatureId === feature.id ? unfocusAll() : focusFeature(feature.id)}
-              onColorChange={(color) => handleColorChange(feature.id, color)}
-              onNameChange={(newName) => handleNameChange(feature.id, newName)}
-              onToggleVisibility={() => toggleFeatureVisibility(feature.id)}
-              index={index}
-            />
-          ))
+              })}
+            </SortableContext>
+          </DndWrapper>
         )}
       </div>
 
