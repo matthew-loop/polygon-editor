@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonFeature } from '../../types/polygon';
 import { ConfirmModal } from '../ConfirmModal';
 
@@ -12,6 +12,7 @@ interface PolygonListItemProps {
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSplit: () => void;
   onNameChange: (newName: string) => void;
   onToggleVisibility: () => void;
   index: number;
@@ -25,6 +26,7 @@ export function PolygonListItem({
   onSelect,
   onEdit,
   onDelete,
+  onSplit,
   onNameChange,
   onToggleVisibility,
   index,
@@ -93,6 +95,11 @@ export function PolygonListItem({
   const handleEditClick = () => {
     setShowMenu(false);
     onEdit();
+  };
+
+  const handleSplitClick = () => {
+    setShowMenu(false);
+    onSplit();
   };
 
   const handleVisibilityClick = (e: React.MouseEvent) => {
@@ -194,6 +201,13 @@ export function PolygonListItem({
                 >
                   <FontAwesomeIcon icon={faPen} className="text-text-tertiary text-[0.6875rem] w-3.5" />
                   Edit vertices
+                </button>
+                <button
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                  onClick={(e) => { e.stopPropagation(); handleSplitClick(); }}
+                >
+                  <FontAwesomeIcon icon={faScissors} className="text-text-tertiary text-[0.6875rem] w-3.5" />
+                  Split
                 </button>
                 <button
                   className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-danger text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-danger-dim text-left"

@@ -22,6 +22,10 @@ export function Sidebar() {
   const stopDrawing = usePolygonStore((state) => state.stopDrawing);
   const hiddenFeatureIds = usePolygonStore((state) => state.hiddenFeatureIds);
   const toggleFeatureVisibility = usePolygonStore((state) => state.toggleFeatureVisibility);
+  const splittingFeatureId = usePolygonStore((state) => state.splittingFeatureId);
+  const splitError = usePolygonStore((state) => state.splitError);
+  const startSplitting = usePolygonStore((state) => state.startSplitting);
+  const stopSplitting = usePolygonStore((state) => state.stopSplitting);
 
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -116,10 +120,13 @@ export function Sidebar() {
         </div>
         <button
           onClick={isDrawing ? stopDrawing : startDrawing}
+          disabled={!!splittingFeatureId}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border ${
             isDrawing
               ? 'bg-accent text-white border-accent'
-              : 'bg-accent-dim text-accent border-transparent hover:bg-accent/20'
+              : splittingFeatureId
+                ? 'bg-accent-dim text-accent/40 border-transparent cursor-not-allowed'
+                : 'bg-accent-dim text-accent border-transparent hover:bg-accent/20'
           }`}
           title={isDrawing ? 'Cancel drawing' : 'Draw new polygon'}
         >
@@ -134,10 +141,31 @@ export function Sidebar() {
         </button>
       </div>
 
+      {/* ── Split Mode Banner ── */}
+      {splittingFeatureId && (
+        <div className="mx-3 mb-1 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 shrink-0">
+          <div className="flex items-center gap-2 text-[0.8125rem] font-medium text-amber-600 dark:text-amber-400">
+            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 512 512" fill="currentColor">
+              <path d="M256 0c17.7 0 32 14.3 32 32l0 10.4c93.7 13.9 167.7 88 181.6 181.6l10.4 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-10.4 0c-1.3 8.8-3.1 17.3-5.5 25.7L493 285l19.8-9.9c15.8-7.9 35-1.5 42.9 14.3s1.5 35-14.3 42.9l-28.5 14.2L477.8 360l35 35c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0l-35-35-13.5 35.1-14.2 28.5c-7.9 15.8-27.1 22.2-42.9 14.3s-22.2-27.1-14.3-42.9L357.5 421l-25.7 5.5c-8.4 2.4-16.9 4.2-25.7 5.5l0 10.4c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-10.4c-8.8-1.3-17.3-3.1-25.7-5.5L190.7 421l9.9 19.8c7.9 15.8 1.5 35-14.3 42.9s-35 1.5-42.9-14.3l-14.2-28.5L116 476l-35 35c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l35-35L57.2 395.6l-28.5-14.2c-15.8-7.9-22.2-27.1-14.3-42.9s27.1-22.2 42.9-14.3l19.8 9.9-5.5-25.7C67.2 299.7 65.4 291.3 64.1 282.5L32 256c-17.7 0-32-14.3-32-32s14.3-32 32-32l32.1-26.5c1.3-8.8 3.1-17.3 5.5-25.7L57.2 116.5 28.7 102.3c-15.8-7.9-22.2-27.1-14.3-42.9s27.1-22.2 42.9-14.3L86 59.3l30-13.5 35.1 35 35c12.5-12.5 32.8-12.5 45.3 0z" />
+            </svg>
+            Draw a line across the polygon to split it
+          </div>
+          {splitError && (
+            <p className="mt-1.5 text-[0.75rem] text-red-500">{splitError}</p>
+          )}
+          <button
+            onClick={stopSplitting}
+            className="mt-2 w-full px-2.5 py-1 rounded-lg text-[0.6875rem] font-semibold cursor-pointer transition-all duration-200 border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       {/* ── Polygon List ── */}
       <div
         className="flex-1 overflow-y-auto px-3 py-1 min-h-[80px]"
-        onClick={() => { if (!editingFeatureId && selectedFeatureId) selectFeature(null); }}
+        onClick={() => { if (!editingFeatureId && !splittingFeatureId && selectedFeatureId) selectFeature(null); }}
       >
         {features.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center gap-3">
@@ -171,6 +199,7 @@ export function Sidebar() {
               isEditing={feature.id === editingFeatureId}
               isHidden={hiddenFeatureIds.has(feature.id)}
               onSelect={() => {
+                if (splittingFeatureId) return;
                 if (editingFeatureId && editingFeatureId !== feature.id) return;
                 selectFeature(
                   !editingFeatureId && feature.id === selectedFeatureId ? null : feature.id
@@ -180,6 +209,7 @@ export function Sidebar() {
                 editFeature(editingFeatureId === feature.id ? null : feature.id)
               }
               onDelete={() => deleteFeature(feature.id)}
+              onSplit={() => startSplitting(feature.id)}
               onNameChange={(newName) => handleNameChange(feature.id, newName)}
               onToggleVisibility={() => toggleFeatureVisibility(feature.id)}
               index={index}

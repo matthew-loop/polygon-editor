@@ -7,7 +7,8 @@ import { usePolygonStore } from '../../store/polygonStore';
 import { useThemeStore } from '../../store/themeStore';
 import { DEFAULT_STYLE } from '../../types/polygon';
 import type { PolygonFeature } from '../../types/polygon';
-import type { Polygon } from 'geojson';
+import type { Polygon, Position } from 'geojson';
+import { splitPolygon } from '../../utils/splitPolygon';
 
 type ExtendedPolygon = L.Polygon & { featureId?: string };
 
@@ -47,6 +48,8 @@ export function GeomanLayer() {
 
   // Track whether Geoman is actively drawing
   const isDrawingRef = useRef(false);
+  // Track whether we're in split-line drawing mode
+  const isSplittingRef = useRef(false);
   // Flag to skip the map click handler when a polygon was just clicked
   const layerClickedRef = useRef(false);
   const prevShowLabelsRef = useRef(false);
@@ -56,11 +59,12 @@ export function GeomanLayer() {
   const editingFeatureId = usePolygonStore((s) => s.editingFeatureId);
   const hiddenFeatureIds = usePolygonStore((s) => s.hiddenFeatureIds);
   const showLabels = usePolygonStore((s) => s.showLabels);
+  const splittingFeatureId = usePolygonStore((s) => s.splittingFeatureId);
   const selectFeature = usePolygonStore((s) => s.selectFeature);
 
   const handleLayerClick = useCallback(
     (featureId: string) => {
-      if (!isDrawingRef.current) {
+      if (!isDrawingRef.current && !isSplittingRef.current) {
         const { editingFeatureId } = usePolygonStore.getState();
         if (editingFeatureId && editingFeatureId !== featureId) return;
         selectFeature(featureId);
@@ -77,8 +81,8 @@ export function GeomanLayer() {
         layerClickedRef.current = false;
         return;
       }
-      const { editingFeatureId, selectedFeatureId, isDrawing } = usePolygonStore.getState();
-      if (!editingFeatureId && selectedFeatureId && !isDrawing && !isDrawingRef.current) {
+      const { editingFeatureId, selectedFeatureId, isDrawing, splittingFeatureId } = usePolygonStore.getState();
+      if (!editingFeatureId && selectedFeatureId && !isDrawing && !isDrawingRef.current && !splittingFeatureId) {
         selectFeature(null);
       }
     };
@@ -125,12 +129,45 @@ export function GeomanLayer() {
     };
     const onDrawEnd = () => {
       isDrawingRef.current = false;
-      usePolygonStore.getState().stopDrawing();
+      if (isSplittingRef.current) {
+        isSplittingRef.current = false;
+        usePolygonStore.getState().stopSplitting();
+      } else {
+        usePolygonStore.getState().stopDrawing();
+      }
     };
 
-    const onCreate = (e: { layer: L.Layer }) => {
-      const layer = e.layer as ExtendedPolygon;
-      const geoJson = layer.toGeoJSON();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onCreate = (e: any) => {
+      const layer = e.layer;
+
+      // Handle split-line creation
+      if (e.shape === 'Line' && isSplittingRef.current) {
+        const geoJson = (layer as L.Polyline).toGeoJSON();
+        map.removeLayer(layer);
+
+        const { splittingFeatureId, features } = usePolygonStore.getState();
+        if (!splittingFeatureId) return;
+
+        const feature = features.find((f) => f.id === splittingFeatureId);
+        if (!feature) return;
+
+        const lineCoords = geoJson.geometry.coordinates as Position[];
+        const result = splitPolygon(feature.geometry, lineCoords);
+
+        if (result.success) {
+          usePolygonStore.getState().splitFeature(splittingFeatureId, result.polygons);
+        } else {
+          usePolygonStore.getState().setSplitError(result.error);
+        }
+
+        isSplittingRef.current = false;
+        return;
+      }
+
+      // Normal polygon creation
+      const polygon = layer as ExtendedPolygon;
+      const geoJson = polygon.toGeoJSON();
       const id = crypto.randomUUID();
 
       const newFeature: PolygonFeature = {
@@ -193,10 +230,26 @@ export function GeomanLayer() {
   useEffect(() => {
     if (isDrawing) {
       map.pm.enableDraw('Polygon');
-    } else if (map.pm.globalDrawModeEnabled()) {
+    } else if (!splittingFeatureId && map.pm.globalDrawModeEnabled()) {
       map.pm.disableDraw();
     }
-  }, [isDrawing, map]);
+  }, [isDrawing, splittingFeatureId, map]);
+
+  // ── Toggle split-line draw mode ────────────────────────────────
+  useEffect(() => {
+    if (splittingFeatureId) {
+      isSplittingRef.current = true;
+      const editingColor = getCssVar('--color-editing');
+      map.pm.enableDraw('Line', {
+        snappable: true,
+        templineStyle: { dashArray: '8,8', color: editingColor },
+        hintlineStyle: { dashArray: '8,8', color: editingColor, opacity: 0.5 },
+      });
+    } else if (!isDrawing && map.pm.globalDrawModeEnabled()) {
+      map.pm.disableDraw();
+      isSplittingRef.current = false;
+    }
+  }, [splittingFeatureId, isDrawing, map]);
 
   // ── Diff-based layer sync ────────────────────────────────────────
   useEffect(() => {
@@ -218,6 +271,7 @@ export function GeomanLayer() {
 
       const isSelected = feature.id === selectedFeatureId;
       const isEditing = feature.id === editingFeatureId;
+      const isSplitting = feature.id === splittingFeatureId;
       const existingLayer = layerMap.get(feature.id);
 
       if (existingLayer) {
@@ -225,7 +279,16 @@ export function GeomanLayer() {
         if (!existingLayer.pm.enabled()) {
           existingLayer.setLatLngs(toLatLngs(feature.geometry));
         }
-        existingLayer.setStyle(featureStyle(isSelected));
+        if (isSplitting) {
+          existingLayer.setStyle({
+            ...featureStyle(true),
+            dashArray: '8,8',
+            color: '#d97706',
+            weight: 3,
+          });
+        } else {
+          existingLayer.setStyle(featureStyle(isSelected));
+        }
 
         // Rebind tooltip when name or label mode changes
         if (
@@ -281,7 +344,7 @@ export function GeomanLayer() {
       }
     });
     prevShowLabelsRef.current = showLabels;
-  }, [features, selectedFeatureId, editingFeatureId, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
+  }, [features, selectedFeatureId, editingFeatureId, splittingFeatureId, hiddenFeatureIds, showLabels, map, handleLayerClick, theme]);
 
   // ── Cleanup all layers on unmount ────────────────────────────────
   useEffect(() => {

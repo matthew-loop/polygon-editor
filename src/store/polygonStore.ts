@@ -8,6 +8,8 @@ interface PolygonStore {
   hasUnsavedChanges: boolean;
   isDrawing: boolean;
   hiddenFeatureIds: Set<string>;
+  splittingFeatureId: string | null;
+  splitError: string | null;
 
   // Actions
   loadFeatures: (features: PolygonFeature[]) => void;
@@ -24,6 +26,10 @@ interface PolygonStore {
   toggleFeatureVisibility: (id: string) => void;
   showLabels: boolean;
   toggleLabels: () => void;
+  startSplitting: (id: string) => void;
+  stopSplitting: () => void;
+  splitFeature: (id: string, resultPolygons: import('geojson').Polygon[]) => void;
+  setSplitError: (error: string | null) => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -34,6 +40,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   isDrawing: false,
   hiddenFeatureIds: new Set(),
   showLabels: false,
+  splittingFeatureId: null,
+  splitError: null,
 
   loadFeatures: (features) =>
     set({
@@ -70,6 +78,9 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
         state.selectedFeatureId === id ? null : state.selectedFeatureId,
       editingFeatureId:
         state.editingFeatureId === id ? null : state.editingFeatureId,
+      splittingFeatureId:
+        state.splittingFeatureId === id ? null : state.splittingFeatureId,
+      splitError: state.splittingFeatureId === id ? null : state.splitError,
       hasUnsavedChanges: true,
     })),
 
@@ -86,6 +97,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       editingFeatureId: id,
       // Editing implies selection
       selectedFeatureId: id,
+      splittingFeatureId: null,
+      splitError: null,
     }),
 
   clearAll: () =>
@@ -95,6 +108,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       editingFeatureId: null,
       hasUnsavedChanges: false,
       hiddenFeatureIds: new Set(),
+      splittingFeatureId: null,
+      splitError: null,
     }),
 
   setUnsavedChanges: (value) =>
@@ -106,6 +121,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
     set({
       isDrawing: true,
       editingFeatureId: null,
+      splittingFeatureId: null,
+      splitError: null,
     }),
 
   stopDrawing: () =>
@@ -126,4 +143,50 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       }
       return { hiddenFeatureIds: next };
     }),
+
+  startSplitting: (id) =>
+    set({
+      splittingFeatureId: id,
+      selectedFeatureId: id,
+      editingFeatureId: null,
+      isDrawing: false,
+      splitError: null,
+    }),
+
+  stopSplitting: () =>
+    set({
+      splittingFeatureId: null,
+      splitError: null,
+    }),
+
+  splitFeature: (id, resultPolygons) =>
+    set((state) => {
+      const idx = state.features.findIndex((f) => f.id === id);
+      if (idx === -1) return state;
+
+      const original = state.features[idx];
+      const newFeatures = resultPolygons.map((geometry, i) => ({
+        id: crypto.randomUUID(),
+        name: `${original.name} (${i + 1})`,
+        geometry,
+        properties: {
+          ...original.properties,
+          name: `${original.name} (${i + 1})`,
+        },
+      }));
+
+      const features = [...state.features];
+      features.splice(idx, 1, ...newFeatures);
+
+      return {
+        features,
+        selectedFeatureId: newFeatures[0].id,
+        splittingFeatureId: null,
+        splitError: null,
+        hasUnsavedChanges: true,
+      };
+    }),
+
+  setSplitError: (error) =>
+    set({ splitError: error }),
 }));
