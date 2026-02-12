@@ -24,25 +24,25 @@ export function FileUpload() {
       setError(null);
 
       let errorCount = 0;
-      const allFeatures: Awaited<ReturnType<typeof parseKmlFile>> = [];
+      let totalFeatures = 0;
 
       for (const file of kmlFiles) {
         try {
           const features = await parseKmlFile(file);
-          allFeatures.push(...features);
+          if (features.length > 0) {
+            const groupName = file.name.replace(/\.kml$/i, '');
+            appendFeatures(features, groupName);
+            totalFeatures += features.length;
+          }
         } catch (err) {
           console.error('Error parsing KML:', file.name, err);
           errorCount++;
         }
       }
 
-      if (allFeatures.length > 0) {
-        appendFeatures(allFeatures);
-      }
-
       if (errorCount > 0) {
         setError(`Failed to parse ${errorCount} file(s)`);
-      } else if (allFeatures.length === 0) {
+      } else if (totalFeatures === 0) {
         setError('No polygons found in KML file(s)');
       }
 

@@ -3,6 +3,14 @@ import type { PolygonFeature, PolygonGroup } from '../types/polygon';
 import type { Polygon } from 'geojson';
 import { mergePolygons } from '../utils/mergePolygons';
 
+function uniqueGroupName(baseName: string, groups: PolygonGroup[]): string {
+  const names = new Set(groups.map((g) => g.name));
+  if (!names.has(baseName)) return baseName;
+  let i = 2;
+  while (names.has(`${baseName} (${i})`)) i++;
+  return `${baseName} (${i})`;
+}
+
 interface PolygonStore {
   features: PolygonFeature[];
   selectedFeatureId: string | null;
@@ -31,7 +39,7 @@ interface PolygonStore {
   deleteFeature: (id: string) => void;
   selectFeature: (id: string | null) => void;
   editFeature: (id: string | null) => void;
-  appendFeatures: (newFeatures: PolygonFeature[]) => void;
+  appendFeatures: (newFeatures: PolygonFeature[], groupName?: string) => void;
   clearAll: () => void;
   setUnsavedChanges: (value: boolean) => void;
   startDrawing: () => void;
@@ -103,11 +111,23 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       collapsedGroupIds: new Set(),
     }),
 
-  appendFeatures: (newFeatures) =>
-    set((state) => ({
-      features: [...state.features, ...newFeatures],
-      hasUnsavedChanges: true,
-    })),
+  appendFeatures: (newFeatures, groupName) =>
+    set((state) => {
+      if (!groupName || newFeatures.length === 0) {
+        return {
+          features: [...state.features, ...newFeatures],
+          hasUnsavedChanges: true,
+        };
+      }
+      const name = uniqueGroupName(groupName, state.groups);
+      const groupId = crypto.randomUUID();
+      const taggedFeatures = newFeatures.map((f) => ({ ...f, groupId }));
+      return {
+        features: [...state.features, ...taggedFeatures],
+        groups: [...state.groups, { id: groupId, name }],
+        hasUnsavedChanges: true,
+      };
+    }),
 
   addFeature: (feature) =>
     set((state) => ({
