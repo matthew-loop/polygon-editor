@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faFloppyDisk, faTrash, faEye, faEyeSlash, faEllipsisVertical, faScissors, faObjectGroup, faCrosshairs, faExpand } from '@fortawesome/free-solid-svg-icons';
 import type { PolygonFeature } from '../../types/polygon';
 import { ConfirmModal } from '../ConfirmModal';
 
@@ -10,11 +10,13 @@ interface PolygonListItemProps {
   isEditing: boolean;
   isHidden: boolean;
   isMergeTarget?: boolean;
+  isFocused?: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onSplit: () => void;
   onMerge: () => void;
+  onFocus: () => void;
   onNameChange: (newName: string) => void;
   onToggleVisibility: () => void;
   index: number;
@@ -26,11 +28,13 @@ export function PolygonListItem({
   isEditing,
   isHidden,
   isMergeTarget,
+  isFocused,
   onSelect,
   onEdit,
   onDelete,
   onSplit,
   onMerge,
+  onFocus,
   onNameChange,
   onToggleVisibility,
   index,
@@ -109,6 +113,11 @@ export function PolygonListItem({
   const handleMergeClick = () => {
     setShowMenu(false);
     onMerge();
+  };
+
+  const handleFocusClick = () => {
+    setShowMenu(false);
+    onFocus();
   };
 
   const handleVisibilityClick = (e: React.MouseEvent) => {
@@ -206,6 +215,14 @@ export function PolygonListItem({
                 className="absolute right-0 top-full mt-1 w-[140px] py-1 rounded-xl glass-panel shadow-lg border border-panel-border z-50"
                 onMouseDown={(e) => e.stopPropagation()}
               >
+                <button
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
+                  onClick={(e) => { e.stopPropagation(); handleFocusClick(); }}
+                >
+                  <FontAwesomeIcon icon={isFocused ? faExpand : faCrosshairs} className="text-text-tertiary text-[0.6875rem] w-3.5" />
+                  {isFocused ? 'Show All' : 'Focus'}
+                </button>
+                <div className="h-px bg-divider mx-2.5 my-1" />
                 <button
                   className="w-full flex items-center gap-2.5 px-3 py-2 bg-transparent border-none text-text-primary text-[0.8125rem] font-body cursor-pointer transition-all duration-150 hover:bg-bg-hover text-left"
                   onClick={(e) => { e.stopPropagation(); handleEditClick(); }}

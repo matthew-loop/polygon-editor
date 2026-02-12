@@ -1,5 +1,6 @@
 import { MapView } from './components/Map/MapView';
 import { Sidebar } from './components/Sidebar/Sidebar';
+import { MapContextMenu } from './components/Map/MapContextMenu';
 import './App.css';
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
         <MapView />
       </div>
       <Sidebar />
+      <MapContextMenu />
     </div>
   );
 }

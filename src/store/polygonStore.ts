@@ -14,6 +14,8 @@ interface PolygonStore {
   mergingFeatureId: string | null;
   mergeTargetIds: string[];
   mergeError: string | null;
+  contextMenu: { featureId: string; x: number; y: number } | null;
+  focusedFeatureId: string | null;
 
   // Actions
   loadFeatures: (features: PolygonFeature[]) => void;
@@ -39,6 +41,10 @@ interface PolygonStore {
   toggleMergeTarget: (id: string) => void;
   mergeFeatures: () => void;
   setMergeError: (error: string | null) => void;
+  openContextMenu: (featureId: string, x: number, y: number) => void;
+  closeContextMenu: () => void;
+  focusFeature: (id: string) => void;
+  unfocusAll: () => void;
 }
 
 export const usePolygonStore = create<PolygonStore>((set) => ({
@@ -54,6 +60,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   mergingFeatureId: null,
   mergeTargetIds: [],
   mergeError: null,
+  contextMenu: null,
+  focusedFeatureId: null,
 
   loadFeatures: (features) =>
     set({
@@ -99,6 +107,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
         ? []
         : state.mergeTargetIds.filter((t) => t !== id),
       mergeError: state.mergingFeatureId === id ? null : state.mergeError,
+      contextMenu: null,
+      focusedFeatureId: state.focusedFeatureId === id ? null : state.focusedFeatureId,
       hasUnsavedChanges: true,
     })),
 
@@ -134,6 +144,8 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
       mergingFeatureId: null,
       mergeTargetIds: [],
       mergeError: null,
+      contextMenu: null,
+      focusedFeatureId: null,
     }),
 
   setUnsavedChanges: (value) =>
@@ -295,4 +307,28 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
 
   setMergeError: (error) =>
     set({ mergeError: error }),
+
+  openContextMenu: (featureId, x, y) =>
+    set({ contextMenu: { featureId, x, y }, selectedFeatureId: featureId }),
+
+  closeContextMenu: () =>
+    set({ contextMenu: null }),
+
+  focusFeature: (id) =>
+    set((state) => {
+      const hiddenFeatureIds = new Set(
+        state.features.filter((f) => f.id !== id).map((f) => f.id)
+      );
+      return {
+        focusedFeatureId: id,
+        hiddenFeatureIds,
+        selectedFeatureId: id,
+      };
+    }),
+
+  unfocusAll: () =>
+    set({
+      focusedFeatureId: null,
+      hiddenFeatureIds: new Set(),
+    }),
 }));

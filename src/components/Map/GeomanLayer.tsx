@@ -352,6 +352,17 @@ export function GeomanLayer() {
           handleLayerClick(feature.id);
         });
 
+        // Right-click to open context menu
+        polygon.on('contextmenu', (e: L.LeafletMouseEvent) => {
+          L.DomEvent.preventDefault(e.originalEvent);
+          layerClickedRef.current = true;
+          usePolygonStore.getState().openContextMenu(
+            feature.id,
+            e.originalEvent.clientX,
+            e.originalEvent.clientY
+          );
+        });
+
         // Edit event — sync geometry back to store
         polygon.on('pm:edit', () => {
           const geoJson = polygon.toGeoJSON();

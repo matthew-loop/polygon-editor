@@ -33,6 +33,9 @@ export function Sidebar() {
   const stopMerging = usePolygonStore((state) => state.stopMerging);
   const toggleMergeTarget = usePolygonStore((state) => state.toggleMergeTarget);
   const mergeFeatures = usePolygonStore((state) => state.mergeFeatures);
+  const focusedFeatureId = usePolygonStore((state) => state.focusedFeatureId);
+  const focusFeature = usePolygonStore((state) => state.focusFeature);
+  const unfocusAll = usePolygonStore((state) => state.unfocusAll);
 
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -262,6 +265,8 @@ export function Sidebar() {
               onDelete={() => deleteFeature(feature.id)}
               onSplit={() => startSplitting(feature.id)}
               onMerge={() => startMerging(feature.id)}
+              isFocused={focusedFeatureId === feature.id}
+              onFocus={() => focusedFeatureId === feature.id ? unfocusAll() : focusFeature(feature.id)}
               onNameChange={(newName) => handleNameChange(feature.id, newName)}
               onToggleVisibility={() => toggleFeatureVisibility(feature.id)}
               index={index}
