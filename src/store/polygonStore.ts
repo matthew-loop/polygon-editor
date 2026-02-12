@@ -427,9 +427,7 @@ export const usePolygonStore = create<PolygonStore>((set) => ({
   deleteGroup: (groupId) =>
     set((state) => ({
       groups: state.groups.filter((g) => g.id !== groupId),
-      features: state.features.map((f) =>
-        f.groupId === groupId ? { ...f, groupId: undefined } : f
-      ),
+      features: state.features.filter((f) => f.groupId !== groupId),
       hiddenGroupIds: (() => {
         const next = new Set(state.hiddenGroupIds);
         next.delete(groupId);

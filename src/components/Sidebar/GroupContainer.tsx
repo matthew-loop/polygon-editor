@@ -296,7 +296,7 @@ export function GroupContainer({ group, featureCount, commonColor, children }: G
       {showDeleteConfirm && (
         <ConfirmModal
           title="Delete group"
-          message={`Delete "${group.name}"? The ${featureCount} polygon${featureCount !== 1 ? 's' : ''} inside will become ungrouped.`}
+          message={`Delete "${group.name}" and its ${featureCount} polygon${featureCount !== 1 ? 's' : ''}? This cannot be undone.`}
           confirmLabel="Delete"
           danger
           onConfirm={() => {
